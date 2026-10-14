@@ -810,6 +810,9 @@ async def app_core(current_user):
         task = task_options[task_translated.index(sel_task_trans)]
         
         if task != st.session_state.active_task:
+            # Zapisz wersje robocze do bazy tylko przy opuszczaniu aktualnej zakładki
+            await save_current_drafts(current_user)
+            
             st.session_state.active_task = task
             st.rerun()
 
@@ -1304,9 +1307,6 @@ async def app_core(current_user):
                         st.caption(f"{n.created_at.strftime('%Y-%m-%d %H:%M')} | {_('Typ')}: {_(n.note_type.value)}")
                         if n.text: st.write(n.text)
                         if n.audio_data: st.audio(n.audio_data, format="audio/wav" if n.note_type == NoteType.AUDIO else "audio/mp3")
-
-    # --- ZAPIS WERSJI ROBOCZYCH DO BAZY ---
-    await save_current_drafts(current_user)
 
 # ==========================================
 # GŁÓWNA BRAMKA SYNCHRONICZNA (NAPRAWA STREAMLIT_OAUTH)
