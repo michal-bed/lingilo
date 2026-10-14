@@ -63,6 +63,8 @@ def get_secret(key, default_val=""):
 AUTH0_DOMAIN = get_secret("AUTH0_DOMAIN")  
 CLIENT_ID = get_secret("CLIENT_ID")         
 CLIENT_SECRET = get_secret("CLIENT_SECRET") 
+# Dodajemy pobieranie adresu powrotnego (z domyślnym fallbackiem na localhost)
+REDIRECT_URI = get_secret("REDIRECT_URI", "http://localhost:8501/component/streamlit_oauth.authorize_button")
 
 oauth2 = OAuth2Component(
     client_id=CLIENT_ID,
@@ -1099,7 +1101,7 @@ def main():
         result = oauth2.authorize_button(
             name="Zaloguj przez Auth0",
             icon="https://auth0.com/favicon.ico",
-            redirect_uri="http://localhost:8501/component/streamlit_oauth.authorize_button",
+            redirect_uri=REDIRECT_URI,  # <--- ZMIANA TUTAJ
             scope="openid email profile"
         )
         
