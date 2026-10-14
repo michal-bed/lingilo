@@ -1,4 +1,4 @@
-﻿import sys
+import sys
 import os
 import io
 import re
@@ -32,9 +32,6 @@ import enum
 import certifi
 from streamlit_oauth import OAuth2Component  
 from sentence_transformers import SentenceTransformer
-
-import nest_asyncio
-nest_asyncio.apply()
 
 # --- NAPRAWA BŁĘDÓW SSL I ASYNCIO W SYSTEMIE WINDOWS ---
 if sys.platform == 'win32':
@@ -79,7 +76,7 @@ oauth2 = OAuth2Component(
 # ==========================================
 # WYSZUKIWANIE SEMANTYCZNE (PAMIĘĆ PODRĘCZNA)
 # ==========================================
-@st.cache_resource(show_spinner=True)
+@st.cache_resource(show_spinner=False)
 def load_embedder():
     try:
         return SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
@@ -152,7 +149,7 @@ STATIC_TRANSLATIONS = {
         "Następnie w punktach wyjaśnij wprowadzone zmiany i krótko uzasadnij, dlaczego nowa wersja jest lepsza.": "Erkläre dann die Änderungen in Stichpunkten und begründe kurz, warum die neue Version besser ist.",
         "Zamiana tekstu na mowę": "Text-zu-Sprache", "Wpisz tekst:": "Text eingeben:", "Generuj wymowę": "Aussprache generieren", "Przygotowywanie...": "Vorbereiten...", "Zapisz to Audio do Historii": "Audio im Verlauf speichern", "Wygenerowane TTS": "Generiertes TTS", "Zapisano audio w historii!": "Audio im Verlauf gespeichert!",
         "Czat z ekspertem językowym": "Chat mit Sprachexperten", "Zadaj pytanie:": "Frage stellen:", "Zapytaj": "Fragen", "Piszę odpowiedź...": "Antwort wird geschrieben...", "Jesteś ekspertem językowym.": "Du bist ein Sprachexperte.",
-        "Zapisuj mowę i tekst z wyszukiwaniem semantycznym": "Sprache und Text mit semantischer Suche speichern", "🎤 Nagraj notatkę głosową": "🎤 Sprachnotiz aufnehmen", "Opcjonalnie: Transkrybuj mowę": "Optional: Sprache transkribieren", "Rozpoznawanie mowy...": "Spracherkennung...", "Błąd transkrypcji": "Transkriptionsfehler", "Treść notatki tekstowej (lub transkrypcji):": "Inhalt der Textnotiz:", "Zapisz Notatkę do bazy": "Notiz speichern", "Notatka jest pusta!": "Notiz ist leer!", "Zapisywanie i generowanie vektorów...": "Speichern und Vektoren generieren...", "Notatka zapisana pomyślnie!": "Notiz erfolgreich gespeichert!",
+        "Zapisuj mowę i tekst z wyszukiwaniem semantycznym": "Sprache und Text mit semantischer Suche speichern", "🎤 Nagraj notatkę głosową": "🎤 Sprachnotiz aufnehmen", "Opcjonalnie: Transkrybuj mowę": "Optional: Sprache transkribieren", "Rozpoznawanie mowy...": "Spracherkennung...", "Błąd transkrypcji": "Transkriptionsfehler", "Treść notatki tekstowej (lub transkrypcji):": "Inhalt der Textnotiz:", "Zapisz Notatkę do bazy": "Notiz speichern", "Notatka jest pusta!": "Notiz ist leer!", "Zapisywanie i generowanie wektorów...": "Speichern und Vektoren generieren...", "Notatka zapisana pomyślnie!": "Notiz erfolgreich gespeichert!",
         "Twój system nauki (Spaced Repetition)": "Dein Lernsystem (Spaced Repetition)", "Nauka (SM-2)": "Lernen (SM-2)", "Dodaj Fiszki": "Lernkarten hinzufügen", "Edytuj / Usuń": "Bearbeiten / Löschen", "🎉 Gratulacje! Brak słówek na dziś.": "🎉 Glückwunsch! Keine Wörter für heute.",
         "Do powtórzenia": "Zu wiederholen", "Język": "Sprache", "Baza": "Basis", "Gramatyka": "Grammatik", "Pokaż odpowiedź": "Antwort anzeigen", "Definicje": "Definitionen", "Odmiany": "Beugungen", "Przykłady": "Beispiele", "Nie pamiętam": "Nicht erinnert", "Z trudem": "Schwer", "Dobrze": "Gut", "Z łatwością": "Einfach",
         "Kreator z analizą lingwistyczną AI": "Ersteller mit KI-Linguistikanalyse", "Wpisz słowo lub wyrażenie:": "Wort oder Ausdruck eingeben:", "Język słowa:": "Wortsprache:", "Pobierz dane przez AI": "Daten über KI abrufen", "AI analizuje słowo jako API...": "KI analysiert das Wort...", "Pobierz zdania z bazy Tatoeba": "Sätze von Tatoeba abrufen", "Szukam autentycznych przykładów...": "Suche nach Beispielen...", "API nie znalazło przykładów.": "API hat keine Beispiele gefunden.",
@@ -173,8 +170,8 @@ STATIC_TRANSLATIONS = {
         "Korekta błędów i redakcja": "Correction d'erreurs et édition", "Tekst do poprawy:": "Texte à corriger :", "Popraw tekst": "Corriger le texte", "Analiza błędów...": "Analyse des erreurs...", "Popraw błędy. Zwróć poprawiony tekst.": "Corrigez les erreurs. Retournez le texte corrigé.",
         "Następnie w punktach wyjaśnij wprowadzone zmiany i krótko uzasadnij, dlaczego nowa wersja jest lepsza.": "Expliquez ensuite les modifications en points et justifiez pourquoi la nouvelle version est meilleure.",
         "Zamiana tekstu na mowę": "Synthèse vocale", "Wpisz tekst:": "Entrez le texte :", "Generuj wymowę": "Générer la voix", "Przygotowywanie...": "Préparation...", "Zapisz to Audio do Historii": "Enregistrer l'audio dans l'historique", "Wygenerowane TTS": "TTS Généré", "Zapisano audio w historii!": "Audio enregistré !",
-        "Czat z ekspertem językowym": "Discutez avec un expert", "Zadaj pytanie:": "Posez une question :", "Zapytaj": "Demander", "Piszę odpowiedź...": "Rédaction de la réponse...", "Jesteś expert linguistique.": "Vous êtes un expert linguistique.",
-        "Zapisuj mowę i tekst z wyszukiwaniem semantycznym": "Enregistrez avec recherche sémantique", "🎤 Nagraj notatkę głosową": "🎤 Enregistrer une note vocale", "Opcjonalnie: Transkrybuj mowę": "Optionnel : Transcrire la voix", "Rozpoznawanie mowy...": "Reconnaissance vocale...", "Błąd transkrypcji": "Erreur de transcription", "Treść notatki tekstowej (lub transkrypcji):": "Contenu de la note :", "Zapisz Notatkę do bazy": "Enregistrer la note", "Notatka jest pusta!": "La note est vide !", "Zapisywanie i generowanie vektorów...": "Enregistrement en cours...", "Notatka zapisana pomyślnie!": "Note enregistrée avec succès !",
+        "Czat z ekspertem językowym": "Discutez avec un expert", "Zadaj pytanie:": "Posez une question :", "Zapytaj": "Demander", "Piszę odpowiedź...": "Rédaction de la réponse...", "Jesteś ekspertem językowym.": "Vous êtes un expert linguistique.",
+        "Zapisuj mowę i tekst z wyszukiwaniem semantycznym": "Enregistrez avec recherche sémantique", "🎤 Nagraj notatkę głosową": "🎤 Enregistrer une note vocale", "Opcjonalnie: Transkrybuj mowę": "Optionnel : Transcrire la voix", "Rozpoznawanie mowy...": "Reconnaissance vocale...", "Błąd transkrypcji": "Erreur de transcription", "Treść notatki tekstowej (lub transkrypcji):": "Contenu de la note :", "Zapisz Notatkę do bazy": "Enregistrer la note", "Notatka jest pusta!": "La note est vide !", "Zapisywanie i generowanie wektorów...": "Enregistrement en cours...", "Notatka zapisana pomyślnie!": "Note enregistrée avec succès !",
         "Twój system nauki (Spaced Repetition)": "Votre système d'apprentissage", "Nauka (SM-2)": "Étudier (SM-2)", "Dodaj Fiszki": "Ajouter Flashcards", "Edytuj / Usuń": "Modifier / Supprimer", "🎉 Gratulacje! Brak słówek na dziś.": "🎉 Félicitations ! Aucun mot pour aujourd'hui.", "Do powtórzenia": "À réviser", "Język": "Langue", "Baza": "Base", "Gramatyka": "Grammaire", "Pokaż odpowiedź": "Afficher la réponse", "Definicje": "Définitions", "Odmiany": "Déclinaisons", "Przykłady": "Exemples", "Nie pamiętam": "Oublié", "Z trudem": "Difficile", "Dobrze": "Bien", "Z łatwością": "Facile",
         "Kreator z analizą lingwistyczną AI": "Créateur avec analyse IA", "Wpisz słowo lub wyrażenie:": "Entrez un mot :", "Język słowa:": "Langue du mot :", "Pobierz dane przez AI": "Obtenir les données IA", "AI analizuje słowo jako API...": "L'IA analyse le mot...", "Pobierz zdania z bazy Tatoeba": "Récupérer des phrases de Tatoeba", "Szukam autentycznych przykładów...": "Recherche d'exemples...", "API nie znalazło przykładów.": "L'API n'a rien trouvé.",
         "Wprowadź ręcznie": "Saisir manuellement", "Forma podstawowa": "Forme de base", "Info gramatyczne": "Infos grammaticales", "Wybierz definicje do zapisania:": "Sélectionnez les définitions :", "Wybierz przykłady zdań:": "Sélectionnez les phrases :", "Zapisz gotową fiszkę": "Enregistrer la flashcard", "Fiszka dodana pomyślnie!": "Flashcard ajoutée !",
@@ -307,40 +304,26 @@ class Note(Base):
 
 async def create_tables():
     engine = get_engine()
-    
-    # Krok 1: Tworzymy wszystkie tabele w pierwszej transakcji
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        
-    # Krok 2: Próbujemy dodać nową kolumnę w odrębnej transakcji.
-    # Jeśli kolumna już istnieje (lub tabela jest nowa), 
-    # błąd zostanie zignorowany i nie cofnie utworzenia tabel z Kroku 1.
     try:
         async with engine.begin() as conn:
             await conn.execute(text("ALTER TABLE user_preferences ADD COLUMN session_drafts TEXT DEFAULT '{}'"))
-    except Exception:
+    except:
         pass
 
 # ==========================================
 # POMOCNICZE FUNKCJE BAZY DANYCH
 # ==========================================
 async def load_user_preferences(user_id):
-    # Dodajemy expire_on_commit=False, aby obiekt "przeżył" zamknięcie sesji
-    async_session = sessionmaker(
-        bind=get_engine(), 
-        class_=AsyncSession, 
-        expire_on_commit=False
-    )
-    
+    async_session = sessionmaker(bind=get_engine(), class_=AsyncSession, expire_on_commit=False)
     async with async_session() as session:
         res = await session.execute(select(UserPreferences).where(UserPreferences.user_id == user_id))
         prefs = res.scalars().first()
-        
         if not prefs:
             prefs = UserPreferences(user_id=user_id)
             session.add(prefs)
             await session.commit()
-            
         return prefs
 
 async def update_user_preference(user_id, key, value):
@@ -360,7 +343,6 @@ async def save_note_to_db(text):
         session.add(Note(user_id=st.session_state.current_user_id, text=text, note_type=NoteType.TEXT, embedding=emb_json))
         await session.commit()
 
-# --- NOWA FUNKCJA ZAPISUJĄCA WERSJE ROBOCZE DO BAZY ---
 async def save_current_drafts(current_user):
     if not current_user or not st.session_state.get('prefs_loaded'):
         return
@@ -531,42 +513,9 @@ async def transcribe_audio(audio_bytes):
         return f"{_('Błąd transkrypcji')}: {e}"
 
 # ==========================================
-# INTERFEJS APLIKACJI (GUI)
+# ASYNCHRONICZNY RDZEŃ APLIKACJI
 # ==========================================
-async def main():
-    st.set_page_config(page_title="Lingilo - Twój pomocnik językowy", layout="wide")
-    
-    # --- BRAMKA AUTENTYKACJI (AUTH0 OAUTH2) ---
-    if "token" not in st.session_state:
-        st.title("🔐 Zaloguj się do Lingilo")
-        result = oauth2.authorize_button(
-            name="Zaloguj przez Auth0",
-            icon="https://auth0.com/favicon.ico",
-            redirect_uri="http://localhost:8501/component/streamlit_oauth.authorize_button",
-            scope="openid email profile"
-        )
-        
-        if result and "token" in result:
-            st.session_state.token = result.get("token")
-            st.rerun()
-            
-        st.stop()  
-        
-    token_data = st.session_state.token
-    if "user_info" not in st.session_state:
-        try:
-            # Używamy standardowej biblioteki requests do odpytania serwera Auth0
-            headers = {"Authorization": f"Bearer {token_data['access_token']}"}
-            response = requests.get(f"https://{AUTH0_DOMAIN}/userinfo", headers=headers)
-            response.raise_for_status()
-            st.session_state.user_info = response.json()
-        except Exception as e:
-            st.error(f"Błąd komunikacji z Auth0: {e}")
-            st.stop()
-            
-    st.session_state.current_user_id = st.session_state.user_info.get("sub", "default_user")
-    current_user = st.session_state.current_user_id
-    
+async def app_core(current_user):
     await create_tables()
 
     # --- ŁADOWANIE PREFERENCJI I ZAPISANYCH DRAFTÓW UŻYTKOWNIKA ---
@@ -591,9 +540,7 @@ async def main():
     with st.sidebar:
         st.success("✅ Zalogowano pomyślnie")
         if st.button("Wyloguj"):
-            # ZAPISUJEMY DANE SESJI TUŻ PRZED WYLOGOWANIEM
             await save_current_drafts(current_user)
-            
             del st.session_state.token
             if "user_info" in st.session_state:
                 del st.session_state.user_info
@@ -1137,18 +1084,48 @@ async def main():
                         if n.text: st.write(n.text)
                         if n.audio_data: st.audio(n.audio_data, format="audio/wav" if n.note_type == NoteType.AUDIO else "audio/mp3")
 
-    # --- ZAPIS WERSJI ROBOCZYCH (INPUT/OUTPUT) DO BAZY ---
+    # --- ZAPIS WERSJI ROBOCZYCH DO BAZY ---
     await save_current_drafts(current_user)
 
-if __name__ == "__main__":
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        
-    # Bezpośrednie nałożenie łatki na aktywną pętlę zdarzeń wątku Streamlita
-    nest_asyncio.apply(loop)
+# ==========================================
+# GŁÓWNA BRAMKA SYNCHRONICZNA (NAPRAWA STREAMLIT_OAUTH)
+# ==========================================
+def main():
+    st.set_page_config(page_title="Lingilo - Twój pomocnik językowy", layout="wide")
     
-    # Uruchomienie aplikacji za pomocą istniejącej, załatanej pętli
-    loop.run_until_complete(main())
+    # Blok logowania wywołuje własną, odizolowaną pętlę async w bibliotece oauth
+    if "token" not in st.session_state:
+        st.title("🔐 Zaloguj się do Lingilo")
+        result = oauth2.authorize_button(
+            name="Zaloguj przez Auth0",
+            icon="https://auth0.com/favicon.ico",
+            redirect_uri="http://localhost:8501/component/streamlit_oauth.authorize_button",
+            scope="openid email profile"
+        )
+        
+        if result and "token" in result:
+            st.session_state.token = result.get("token")
+            st.rerun()
+            
+        st.stop()  
+        
+    token_data = st.session_state.token
+    if "user_info" not in st.session_state:
+        try:
+            headers = {"Authorization": f"Bearer {token_data['access_token']}"}
+            response = requests.get(f"https://{AUTH0_DOMAIN}/userinfo", headers=headers)
+            response.raise_for_status()
+            st.session_state.user_info = response.json()
+        except Exception as e:
+            st.error(f"Błąd komunikacji z Auth0: {e}")
+            st.stop()
+            
+    current_user = st.session_state.user_info.get("sub", "default_user")
+    st.session_state.current_user_id = current_user
+
+    # Kiedy użytkownik jest autoryzowany, odpalamy rdzeń asynchroniczny "z czystą kartą"
+    asyncio.run(app_core(current_user))
+
+
+if __name__ == "__main__":
+    main()
