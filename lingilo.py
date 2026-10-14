@@ -94,6 +94,14 @@ SUPPORTED_LANGUAGES = [
     "Portugalski", "Rosyjski", "Ukraiński", "Białoruski", "Słowacki", "Czeski"
 ]
 
+# --- NOWA MAPA KODÓW JĘZYKOWYCH DLA TTS ---
+TTS_LANG_MAP = {
+    "Polski": "pl", "Angielski": "en", "Niemiecki": "de", 
+    "Holenderski": "nl", "Francuski": "fr", "Hiszpański": "es", 
+    "Włoski": "it", "Portugalski": "pt", "Rosyjski": "ru", 
+    "Ukraiński": "uk", "Białoruski": "be", "Słowacki": "sk", "Czeski": "cs"
+}
+
 # ==========================================
 # SCHEMATY AI (INSTRUCTOR & PYDANTIC)
 # ==========================================
@@ -195,7 +203,7 @@ STATIC_TRANSLATIONS = {
         "Zamiana tekstu na mowę": "Texto a voz", "Wpisz tekst:": "Ingrese texto:", "Generuj wymowę": "Generar voz", "Przygotowywanie...": "Preparando...", "Zapisz to Audio do Historii": "Guardar audio en el historial", "Wygenerowane TTS": "TTS Generado", "Zapisano audio w historii!": "¡Audio guardado en el historial!",
         "Czat z ekspertem językowym": "Chat con un experto", "Zadaj pytanie:": "Haz una pregunta:", "Zapytaj": "Preguntar", "Piszę odpowiedź...": "Escribiendo respuesta...", "Jesteś ekspertem językowym.": "Eres un experto en idiomas.",
         "Zapisuj mowę i tekst z wyszukiwaniem semantycznym": "Guarda con búsqueda semántica", "🎤 Nagraj notatkę głosową": "🎤 Grabar nota de voz", "Opcjonalnie: Transkrybuj mowę": "Opcional: Transcribir voz", "Rozpoznawanie mowy...": "Reconocimiento de voz...", "Błąd transkrypcji": "Error de transcripción", "Treść notatki tekstowej (lub transkrypcji):": "Contenido de la nota:", "Zapisz Notatkę do bazy": "Guardar nota", "Notatka jest pusta!": "¡La nota está vacía!", "Zapisywanie i generowanie wektorów...": "Guardando...", "Notatka zapisana pomyślnie!": "¡Nota guardada con éxito!",
-        "Twój system nauki (Spaced Repetition)": "Tu sistema de aprendizaje", "Nauka (SM-2)": "Estudiar (SM-2)", "Dodaj Fiszki": "Añadir Tarjetas", "Edytuj / Usuń": "Editar / Eliminar", "🎉 Gratulacje! Brak słówek na dziś.": "🎉 ¡Felicidades! No hay palabras hoy.", "Do powtórzenia": "Para repasar", "Język": "Idioma", "Baza": "Base", "Gramática": "Gramática", "Pokaż odpowiedź": "Mostrar respuesta", "Definicje": "Definiciones", "Odmiany": "Inflexiones", "Przykłady": "Ejemplos", "Nie pamiętam": "No recuerdo", "Z trudem": "Difícil", "Dobrze": "Bien", "Z łatwością": "Fácil",
+        "Twój system nauki (Spaced Repetition)": "Tu sistema de aprendizaje", "Nauka (SM-2)": "Estudiar (SM-2)", "Dodaj Fiszki": "Añadir Tarjetas", "Edytuj / Usuń": "Editar / Eliminar", "🎉 Gratulacje! Brak słówek na dziś.": "🎉 ¡Felicidades! No hay palabras hoy.", "Do powtórzenia": "Para repasar", "Język": "Idioma", "Baza": "Base", "Gramatyka": "Gramática", "Pokaż odpowiedź": "Mostrar respuesta", "Definicje": "Definiciones", "Odmiany": "Inflexiones", "Przykłady": "Ejemplos", "Nie pamiętam": "No recuerdo", "Z trudem": "Difícil", "Dobrze": "Bien", "Z łatwością": "Fácil",
         "Kreator z analizą lingwistyczną AI": "Creador con análisis IA", "Wpisz słowo lub wyrażenie:": "Introduce una palabra:", "Język słowa:": "Idioma de la palabra:", "Pobierz dane przez AI": "Obtener datos por IA", "AI analizuje słowo jako API...": "La IA analiza la palabra...", "Pobierz zdania z bazy Tatoeba": "Obtener oraciones de Tatoeba", "Szukam autentycznych przykładów...": "Buscando ejemplos...", "API nie znalazło przykładów.": "La API no encontró ejemplos.",
         "Wprowadź ręcznie": "Introducir manualmente", "Forma podstawowa": "Forma base", "Info gramatyczne": "Info gramatical", "Wybierz definicje do zapisania:": "Selecciona definiciones:", "Wybierz przykłady zdań:": "Selecciona oraciones:", "Zapisz gotową fiszkę": "Guardar tarjeta", "Fiszka dodana pomyślnie!": "¡Tarjeta añadida!",
         "Twoje własne uwagi (opcjonalnie):": "Tus propias notas (opcional):", "Twoje uwagi": "Tus notas",
@@ -307,7 +315,7 @@ STATIC_TRANSLATIONS = {
         "Twój system nauki (Spaced Repetition)": "Ваша система обучения", "Nauka (SM-2)": "Обучение (SM-2)", "Dodaj Fiszki": "Добавить карточки", "Edytuj / Usuń": "Редактировать / Удалить", "🎉 Gratulacje! Brak słówek na dziś.": "🎉 Поздравляем! На сегодня слов нет.",
         "Do powtórzenia": "Для повторения", "Język": "Язык", "Baza": "База", "Gramatyka": "Грамматика", "Pokaż odpowiedź": "Показать ответ", "Definicje": "Определения", "Odmiany": "Склонения", "Przykłady": "Примеры", "Nie pamiętam": "Не помню", "Z trudem": "С трудом", "Dobrze": "Хорошо", "Z łatwością": "Легко",
         "Kreator z analizą lingwistyczną AI": "Создатель с анализом ИИ", "Wpisz słowo lub wyrażenie:": "Введите слово:", "Język słowa:": "Язык слова:", "Pobierz dane przez AI": "Получить данные через ИИ", "AI analizuje słowo jako API...": "ИИ анализирует слово...", "Pobierz zdania z bazy Tatoeba": "Получить предложения Tatoeba", "Szukam autentycznych przykładów...": "Поиск примеров...", "API nie znalazło przykładów.": "API не нашло примеров.",
-        "Wprowadź ręcznie": "Ввести вручную", "Forma podstawowa": "Начальная форма", "Info gramatyczne": "Грамматическая инфо", "Wybierz definicje do zapisania:": "Выберите определения:", "Wybierz przykłady zdań:": "Выберите примеры:", "Zapisz gotową fiszkę": "Сохранить карточку", "Fiszka dodana pomyślnie!": "Карточка добавлена!",
+        "Wprowadź ręcznie": "Ввести вручную", "Forma podstawowa": "Начальная форма", "Info gramatyczne": "Грамматическая инфо", "Wybierz definicje do zapisania:": "Выберите определения:", "Wybierz приkłady zdań:": "Выберите примеры:", "Zapisz gotową fiszkę": "Сохранить карточку", "Fiszka dodana pomyślnie!": "Карточка добавлена!",
         "Twoje własne uwagi (opcjonalnie):": "Ваши собственные заметки (необязательно):", "Twoje uwagi": "Ваши заметки",
         "Język tłumaczenia (definicje):": "Язык перевода (определения):", "Słowo": "Слово", "💾 Zapisz zmiany": "💾 Сохранить изменения",
         "Audio (opcjonalnie):": "Аудио (необязательно):", "Generuj wymowę (TTS)": "Сгенерировать произношение (TTS)", "🎤 Nagraj wymowę": "🎤 Записать произношение", "Usuń przypisane audio": "Удалить назначенное аудио",
@@ -327,7 +335,7 @@ STATIC_TRANSLATIONS = {
         "Czat z ekspertem językowym": "Чат з мовним експертом", "Zadaj pytanie:": "Поставте запитання:", "Zapytaj": "Запитати", "Piszę odpowiedź...": "Пишу відповідь...", "Jesteś ekspertem językowym.": "Ви мовний експерт.",
         "Zapisuj mowę i tekst z wyszukiwaniem semantycznym": "Зберігайте мову і текст із семантичним пошуком", "🎤 Nagraj notatkę głosową": "🎤 Записати голосовую нотатку", "Opcjonalnie: Transkrybuj mowę": "Опціонально: Транскрибувати мову", "Rozpoznawanie mowy...": "Розпізнавання мови...", "Błąd transkrypcji": "Помилка транскрипції", "Treść notatki tekstowej (lub transkrypcji):": "Вміст нотатки:", "Zapisz Notatkę do bazy": "Зберегти нотатку", "Notatka jest pusta!": "Нотатка порожня!",
         "Zapisywanie i generowanie wektorów...": "Збереження...", "Notatka zapisana pomyślnie!": "Нотатку успішно збережено!",
-        "Twój system nauki (Spaced Repetition)": "Ваша система навчання", "Nauka (SM-2)": "Навчання (SM-2)", "Dodaj Fiszki": "Додати картки", "Edytuj / Usuń": "Редагувати / Видалити", "🎉 Gratulacje! Brak słówek na dziś.": "🎉 Вітаємо! На сьогодні слів немає.",
+        "Twój system nauki (Spaced Repetition)": "Ваша система навчання", "Nauka (SM-2)": "Навчання (SM-2)", "Dodaj Fiszki": "Додати картки", "Edytuj / Usuń": "Редактировать / Видалити", "🎉 Gratulacje! Brak słówek na dziś.": "🎉 Вітаємо! На сьогодні слів немає.",
         "Do powtórzenia": "Для повторення", "Język": "Мова", "Baza": "База", "Gramatyka": "Граматика", "Pokaż odpowiedź": "Показати відповідь", "Definicje": "Визначення", "Odmiany": "Відмінювання", "Przykłady": "Приклади", "Nie pamiętam": "Не пам'ятаю", "Z trudem": "З труднощами", "Dobrze": "Добре", "Z łatwością": "Легко",
         "Kreator z analizą lingwistyczną AI": "Творець z analizą ШІ", "Wpisz słowo lub wyrażenie:": "Введіть слово:", "Język słowa:": "Мова слова:", "Pobierz dane przez AI": "Отримати дані через ШІ", "AI analizuje słowo jako API...": "ШІ аналізує слово...", "Pobierz zdania z bazy Tatoeba": "Отримати речення Tatoeba", "Szukam autentycznych przykładów...": "Пошук прикладів...", "API nie znalazło przykładów.": "API не знайшло прикладів.",
         "Wprowadź ręcznie": "Ввести вручную", "Forma podstawowa": "Початкова форма", "Info gramatyczne": "Граматична інфо", "Wybierz definicje do zapisania:": "Виберіть визначення:", "Wybierz przykłady zdań:": "Виберіть приклади:", "Zapisz gotową fiszkę": "Зберегти картку", "Fiszka dodana pomyślnie!": "Картку додано!",
@@ -881,9 +889,16 @@ async def app_core(current_user):
         col1, col2 = st.columns(2)
         if col1.button(_("Generuj wymowę")) and st.session_state.tts_text:
             with st.spinner(_("Przygotowywanie...")):
-                try: lang_code = detect(st.session_state.tts_text)
-                except: lang_code = "en"
-                tts = gTTS(text=st.session_state.tts_text, lang=lang_code)
+                try: 
+                    lang_code = detect(st.session_state.tts_text)
+                except: 
+                    lang_code = "en"
+                
+                try:
+                    tts = gTTS(text=st.session_state.tts_text, lang=lang_code)
+                except ValueError:
+                    tts = gTTS(text=st.session_state.tts_text, lang="en")
+                    
                 buf = io.BytesIO()
                 tts.write_to_fp(buf)
                 st.session_state.audio_generation_audio_file = buf.getvalue()
@@ -1112,15 +1127,14 @@ async def app_core(current_user):
                 with a_col1:
                     if st.button(_("Generuj wymowę (TTS)")):
                         with st.spinner(_("Generowanie...")):
+                            tts_lang_code = TTS_LANG_MAP.get(card_lang, "en")
                             try:
-                                eng_lang = STATIC_TRANSLATIONS.get("Angielski", {}).get(card_lang, "English")
-                                tts_lang_code = langcodes.find(eng_lang).language
-                            except:
-                                tts_lang_code = "en"
-                            tts = gTTS(text=card_word, lang=tts_lang_code)
-                            buf = io.BytesIO()
-                            tts.write_to_fp(buf)
-                            st.session_state.flashcard_audio_bytes = buf.getvalue()
+                                tts = gTTS(text=card_word, lang=tts_lang_code)
+                                buf = io.BytesIO()
+                                tts.write_to_fp(buf)
+                                st.session_state.flashcard_audio_bytes = buf.getvalue()
+                            except Exception as e:
+                                st.error(f"Błąd TTS: {e}")
                 
                 with a_col2:
                     mic_audio = st.audio_input(_("🎤 Nagraj wymowę"))
