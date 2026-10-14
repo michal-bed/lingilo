@@ -517,8 +517,15 @@ async def transcribe_audio(audio_bytes):
 # ==========================================
 # ASYNCHRONICZNY RDZEŃ APLIKACJI
 # ==========================================
+# ==========================================
+# ASYNCHRONICZNY RDZEŃ APLIKACJI
+# ==========================================
 async def app_core(current_user):
-    await create_tables()
+    
+    # --- OPTYMALIZACJA LAGÓW: Odpytujemy bazę o tabele tylko raz! ---
+    if "db_initialized" not in st.session_state:
+        await create_tables()
+        st.session_state.db_initialized = True
 
     # --- ŁADOWANIE PREFERENCJI I ZAPISANYCH DRAFTÓW UŻYTKOWNIKA ---
     if not st.session_state.prefs_loaded:
