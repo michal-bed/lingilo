@@ -1,6 +1,7 @@
 streamlit
 streamlit-oauth
 sqlalchemy
+greenlet
 asyncpg
 openai
 instructor
