@@ -13,6 +13,6 @@ gTTS
 langdetect
 langcodes
 certifi
-nest_asyncio
 sentence-transformers
 numpy
+torchvision
