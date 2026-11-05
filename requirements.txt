@@ -1,6 +1,7 @@
 streamlit
 streamlit-oauth
 sqlalchemy
+greenlet
 asyncpg
 openai
 instructor
@@ -12,6 +13,6 @@ gTTS
 langdetect
 langcodes
 certifi
-nest_asyncio
 sentence-transformers
 numpy
+torchvision
