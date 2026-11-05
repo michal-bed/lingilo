@@ -1,0 +1,17 @@
+streamlit
+streamlit-oauth
+sqlalchemy
+asyncpg
+openai
+instructor
+pydantic
+pandas
+requests
+python-dotenv
+gTTS
+langdetect
+langcodes
+certifi
+nest_asyncio
+sentence-transformers
+numpy
