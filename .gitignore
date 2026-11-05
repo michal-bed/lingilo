@@ -2,3 +2,5 @@
 .streamlit/
 __pycache__/
 *.pkl
+lingilo_local.db
+ui_translations.json
