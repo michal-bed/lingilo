@@ -407,11 +407,12 @@ async def generate_word_data(word, language, target_language):
 
     system_prompt = (
         f"Jesteś wybitnym lingwistą. Tworzysz fiszkę dla słowa w języku '{language}'. "
-        f"Pamiętaj, aby definicje oraz tłumaczenia zdań (translation) były napisane w języku '{target_language}'."
+        f"Oryginalne zdania (pole 'original') MUSZĄ być w języku '{language}'. "
+        f"Definicje oraz tłumaczenia zdań (pole 'translation') MUSZĄ być napisane w języku '{target_language}'."
     )
     messages = [
         {"role": "system", "content": system_prompt},
-        {"role": "user", "content": f"Analizuj: '{word}' w języku {language}."}
+        {"role": "user", "content": f"Analizuj słowo: '{word}' (język: {language})."}
     ]
     
     try:
@@ -439,6 +440,8 @@ async def generate_word_data(word, language, target_language):
         g = flashcard.grammar_info
         features = [f for f in [g.gender, g.number, g.case, g.person, g.tense, g.aspect, g.degree] if f]
         formatted_grammar = f"{g.part_of_speech} ({', '.join(features)})" if features else g.part_of_speech
+        
+        # Generowanie zdań do wyświetlenia (oryginał ➔ tłumaczenie)
         formatted_sentences = [f"{s.original} ➔ {s.translation}" for s in flashcard.sentences]
         
         async with sessionmaker(bind=get_engine(), class_=AsyncSession)() as session:
@@ -460,7 +463,7 @@ async def generate_word_data(word, language, target_language):
     except Exception as e:
         print(f"Błąd generatora fiszek: {e}")
         return {}
-
+    
 def get_example_sentences_api(word, language_name, target_language_name):
     try:
         from_lang_code = TATOEBA_LANG_MAP.get(language_name, "eng")
@@ -559,8 +562,8 @@ class GrammarFeatures(BaseModel):
     degree: Optional[str] = Field(None, description="Stopień")
 
 class ExampleSentence(BaseModel):
-    original: str = Field(default="", description="Przykładowe zdanie w docelowym języku obcym.")
-    translation: str = Field(default="", description="Tłumaczenie tego zdania na język bazowy użytkownika.")
+    original: str = Field(description="Oryginalne zdanie przykładowe z użyciem tego słowa (w języku obcym). MUSI być wypełnione.")
+    translation: str = Field(description="Tłumaczenie tego zdania na język bazowy użytkownika. MUSI być wypełnione.")
 
 class FlashcardData(BaseModel):
     base_form: str = Field(description="Forma podstawowa słowa")
