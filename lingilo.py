@@ -1322,11 +1322,166 @@ async def app_core(current_user):
                         if n.text: st.write(n.text)
                         if n.audio_data: st.audio(n.audio_data, format="audio/wav" if n.note_type == NoteType.AUDIO else "audio/mp3")
 
+# ==========================================
+# SŁOWNIK TŁUMACZEŃ EKRANU POWITALNEGO (13 JĘZYKÓW)
+# ==========================================
+WELCOME_SCREEN_TRANSLATIONS = {
+    "Angielski": {
+        "Twój Osobisty Asystent Językowy AI": "Your Personal AI Language Assistant",
+        "Wznieś naukę języków obcych na wyższy poziom dzięki sztucznej inteligencji. Lingilo łączy nowoczesne modele LLM, algorytmy powtórek i wyszukiwanie semantyczne w jednym miejscu.": "Take foreign language learning to the next level with artificial intelligence. Lingilo combines modern LLM models, spaced repetition algorithms, and semantic search in one place.",
+        "Inteligentne Fiszki (SM-2) z AI i bazą Tatoeba": "Smart Flashcards (SM-2) with AI and Tatoeba database",
+        "Korekta Tekstów z wyjaśnieniem błędów": "Text Correction with error explanations",
+        "Generowanie Mowy (TTS) i trening wymowy": "Speech Generation (TTS) and pronunciation training",
+        "Zaawansowane Tłumaczenia z zachowaniem kontekstu": "Advanced Translations preserving context",
+        "Baza Notatek z wyszukiwaniem semantycznym": "Knowledge Base with semantic search",
+        "Czat z Ekspertem językowym w czasie rzeczywistym": "Chat with a Language Expert in real-time"
+    },
+    "Niemiecki": {
+        "Twój Osobisty Asystent Językowy AI": "Dein persönlicher KI-Sprachassistent",
+        "Wznieś naukę języków obcych na wyższy poziom dzięki sztucznej inteligencji. Lingilo łączy nowoczesne modele LLM, algorytmy powtórek i wyszukiwanie semantyczne w jednym miejscu.": "Bringe das Erlernen von Fremdsprachen durch künstliche Intelligenz auf die nächste Stufe. Lingilo kombiniert moderne LLM-Modelle, Wiederholungsalgorithmen und semantische Suche an einem Ort.",
+        "Inteligentne Fiszki (SM-2) z AI i bazą Tatoeba": "Intelligente Lernkarten (SM-2) mit KI und Tatoeba-Datenbank",
+        "Korekta Tekstów z wyjaśnieniem błędów": "Textkorrektur mit Fehlererklärungen",
+        "Generowanie Mowy (TTS) i trening wymowy": "Sprachgenerierung (TTS) und Aussprachetraining",
+        "Zaawansowane Tłumaczenia z zachowaniem kontekstu": "Erweiterte Übersetzungen unter Beibehaltung des Kontexts",
+        "Baza Notatek z wyszukiwaniem semantycznym": "Notizdatenbank mit semantischer Suche",
+        "Czat z Ekspertem językowym w czasie rzeczywistym": "Chat mit einem Sprachexperten in Echtzeit"
+    },
+    "Francuski": {
+        "Twój Osobisty Asystent Językowy AI": "Votre assistant linguistique personnel IA",
+        "Wznieś naukę języków obcych na wyższy poziom dzięki sztucznej inteligencji. Lingilo łączy nowoczesne modele LLM, algorytmy powtórek i wyszukiwanie semantyczne w jednym miejscu.": "Portez l'apprentissage des langues étrangères au niveau supérieur grâce à l'intelligence artificielle.",
+        "Inteligentne Fiszki (SM-2) z AI i bazą Tatoeba": "Flashcards intelligentes (SM-2) avec IA et base Tatoeba",
+        "Korekta Tekstów z wyjaśnieniem błędów": "Correction de textes avec explications",
+        "Generowanie Mowy (TTS) i trening wymowy": "Génération vocale (TTS) et entraînement",
+        "Zaawansowane Tłumaczenia z zachowaniem kontekstu": "Traductions avancées avec contexte",
+        "Baza Notatek z wyszukiwaniem semantycznym": "Base de notes avec recherche sémantique",
+        "Czat z Ekspertem językowym w czasie rzeczywistym": "Discutez avec un expert linguistique en temps réel"
+    },
+    "Hiszpański": {
+        "Twój Osobisty Asystent Językowy AI": "Tu asistente lingüístico personal de IA",
+        "Wznieś naukę języków obcych na wyższy poziom dzięki sztucznej inteligencji. Lingilo łączy nowoczesne modele LLM, algorytmy powtórek i wyszukiwanie semantyczne w jednym miejscu.": "Lleva el aprendizaje de idiomas al siguiente nivel con inteligencia artificial.",
+        "Inteligentne Fiszki (SM-2) z AI i bazą Tatoeba": "Tarjetas inteligentes (SM-2) con IA y base Tatoeba",
+        "Korekta Tekstów z wyjaśnieniem błędów": "Corrección de textos con explicaciones",
+        "Generowanie Mowy (TTS) i trening wymowy": "Generación de voz (TTS) y entrenamiento",
+        "Zaawansowane Tłumaczenia z zachowaniem kontekstu": "Traducciones avanzadas que preservan el contexto",
+        "Baza Notatek z wyszukiwaniem semantycznym": "Base de notas con búsqueda semántica",
+        "Czat z Ekspertem językowym w czasie rzeczywistym": "Chat con un experto en idiomas en tiempo real"
+    },
+    "Włoski": {
+        "Twój Osobisty Asystent Językowy AI": "Il tuo assistente linguistico AI",
+        "Wznieś naukę języków obcych na wyższy poziom dzięki sztucznej inteligencji. Lingilo łączy nowoczesne modele LLM, algorytmy powtórek i wyszukiwanie semantyczne w jednym miejscu.": "Porta l'apprendimento delle lingue a un livello superiore con l'intelligenza artificiale.",
+        "Inteligentne Fiszki (SM-2) z AI i bazą Tatoeba": "Flashcard intelligenti (SM-2) con IA e database Tatoeba",
+        "Korekta Tekstów z wyjaśnieniem błędów": "Correzione di testi con spiegazione",
+        "Generowanie Mowy (TTS) i trening wymowy": "Generazione vocale (TTS) e allenamento",
+        "Zaawansowane Tłumaczenia z zachowaniem kontekstu": "Traduzioni avanzate con contesto",
+        "Baza Notatek z wyszukiwaniem semantycznym": "Base di note con ricerca semantica",
+        "Czat z Ekspertem językowym w czasie rzeczywistym": "Chat con un esperto linguistico in tempo reale"
+    },
+    "Holenderski": {
+        "Twój Osobisty Asystent Językowy AI": "Jouw persoonlijke AI-taalassistent",
+        "Wznieś naukę języków obcych na wyższy poziom dzięki sztucznej inteligencji. Lingilo łączy nowoczesne modele LLM, algorytmy powtórek i wyszukiwanie semantyczne w jednym miejscu.": "Til het leren van vreemde talen naar een hoger niveau met kunstmatige intelligentie.",
+        "Inteligentne Fiszki (SM-2) z AI i bazą Tatoeba": "Slimme flashcards (SM-2) met AI en Tatoeba-database",
+        "Korekta Tekstów z wyjaśnieniem błędów": "Tekstcorrectie met foutenanalyse",
+        "Generowanie Mowy (TTS) i trening wymowy": "Spraakgeneratie (TTS) en uitspraak",
+        "Zaawansowane Tłumaczenia z zachowaniem kontekstu": "Geavanceerde vertalingen met behoud van context",
+        "Baza Notatek z wyszukiwaniem semantycznym": "Notitiebase met semantisch zoeken",
+        "Czat z Ekspertem językowym w czasie rzeczywistym": "Chat met een taalexpert in realtime"
+    },
+    "Portugalski": {
+        "Twój Osobisty Asystent Językowy AI": "Seu assistente de idiomas pessoal de IA",
+        "Wznieś naukę języków obcych na wyższy poziom dzięki sztucznej inteligencji. Lingilo łączy nowoczesne modele LLM, algorytmy powtórek i wyszukiwanie semantyczne w jednym miejscu.": "Eleve o aprendizado de idiomas a um novo patamar com inteligência artificial.",
+        "Inteligentne Fiszki (SM-2) z AI i bazą Tatoeba": "Cartões inteligentes (SM-2) com IA e base Tatoeba",
+        "Korekta Tekstów z wyjaśnieniem błędów": "Correção de textos com explicações",
+        "Generowanie Mowy (TTS) i trening wymowy": "Geração de fala (TTS) e treinamento",
+        "Zaawansowane Tłumaczenia z zachowaniem kontekstu": "Traduções avançadas mantendo o contexto",
+        "Baza Notatek z wyszukiwaniem semantycznym": "Base de notas com busca semântica",
+        "Czat z Ekspertem językowym w czasie rzeczywistym": "Chat com um especialista em idiomas em tempo real"
+    },
+    "Rosyjski": {
+        "Twój Osobisty Asystent Językowy AI": "Ваш личный ИИ-помощник по языкам",
+        "Wznieś naukę języków obcych na wyższy poziom dzięki sztucznej inteligencji. Lingilo łączy nowoczesne modele LLM, algorytmy powtórek i wyszukiwanie semantyczne w jednym miejscu.": "Поднимите изучение языков на новый уровень с помощью искусственного интеллекта.",
+        "Inteligentne Fiszki (SM-2) z AI i bazą Tatoeba": "Умные карточки (SM-2) с ИИ и базой Tatoeba",
+        "Korekta Tekstów z wyjaśnieniem błędów": "Исправление текста с объяснениями",
+        "Generowanie Mowy (TTS) i trening wymowy": "Генерация речи (TTS) и тренировка",
+        "Zaawansowane Tłumaczenia z zachowaniem kontekstu": "Продвинутый перевод с сохранением контекста",
+        "Baza Notatek z wyszukiwaniem semantycznym": "База заметок с семантическим поиском",
+        "Czat z Ekspertem językowym w czasie rzeczywistym": "Чат с языковым экспертом в реальном времени"
+    },
+    "Ukraiński": {
+        "Twój Osobisty Asystent Językowy AI": "Ваш особистий мовний помічник зі штучним інтелектом",
+        "Wznieś naukę języków obcych na wyższy poziom dzięki sztucznej inteligencji. Lingilo łączy nowoczesne modele LLM, algorytmy powtórek i wyszukiwanie semantyczne w jednym miejscu.": "Підніміть вивчення іноземних мов на новий рівень за допомогою штучного інтелекту.",
+        "Inteligentne Fiszki (SM-2) z AI i bazą Tatoeba": "Розумні картки (SM-2) з ШІ та базою Tatoeba",
+        "Korekta Tekstów z wyjaśnieniem błędów": "Корекція тексту з поясненнями",
+        "Generowanie Mowy (TTS) i trening wymowy": "Генерація мовлення (TTS) та тренування",
+        "Zaawansowane Tłumaczenia z zachowaniem kontekstu": "Розширений переклад зі збереженням контексту",
+        "Baza Notatek z wyszukiwaniem semantycznym": "База нотаток із семантичним пошуком",
+        "Czat z Ekspertem językowym w czasie rzeczywistym": "Чат з мовним експертом у реальному часі"
+    },
+    "Białoruski": {
+        "Twój Osobisty Asystent Językowy AI": "Ваш асабісты моўны памочнік са штучным інтэлектам",
+        "Wznieś naukę języków obcych na wyższy poziom dzięki sztucznej inteligencji. Lingilo łączy nowoczesne modele LLM, algorytmy powtórek i wyszukiwanie semantyczne w jednym miejscu.": "Падніміце вывучэнне замежных моў на новы ўзровень з дапамогай штучнага інтэлекту.",
+        "Inteligentne Fiszki (SM-2) z AI i bazą Tatoeba": "Разумныя карткі (SM-2) з ШІ і базай Tatoeba",
+        "Korekta Tekstów z wyjaśnieniem błędów": "Карэкцыя тэксту z тлумачэннямі",
+        "Generowanie Mowy (TTS) i trening wymowy": "Генерацыя маўлення (TTS) і трэніроўка",
+        "Zaawansowane Tłumaczenia z zachowaniem kontekstu": "Пашыраны пераклад са захаваннем кантэксту",
+        "Baza Notatek z wyszukiwaniem semantycznym": "База нататак з семантычным пошукам",
+        "Czat z Ekspertem językowym w czasie rzeczywistym": "Чат з моўным экспертам у рэальным часе"
+    },
+    "Słowacki": {
+        "Twój Osobisty Asystent Językowy AI": "Váš osobný jazykový asistent AI",
+        "Wznieś naukę języków obcych na wyższy poziom dzięki sztucznej inteligencji. Lingilo łączy nowoczesne modele LLM, algorytmy powtórek i wyszukiwanie semantyczne w jednym miejscu.": "Posuňte štúdium cudzích jazykov na vyššiu úroveň vďaka umelej inteligencii.",
+        "Inteligentne Fiszki (SM-2) z AI i bazą Tatoeba": "Inteligentné kartičky (SM-2) s AI a databázou Tatoeba",
+        "Korekta Tekstów z wyjaśnieniem błędów": "Oprava textov s vysvetlením chýb",
+        "Generowanie Mowy (TTS) i trening wymowy": "Generovanie reči (TTS) a tréning výslovnosti",
+        "Zaawansowane Tłumaczenia z zachowaniem kontekstu": "Pokročilé preklady so zachovaním kontextu",
+        "Baza Notatek z wyszukiwaniem semantycznym": "Databáza poznámok so sémantickým vyhľadávaním",
+        "Czat z Ekspertem językowym w czasie rzeczywistym": "Chat s jazykovým expertom v reálnom čase"
+    },
+    "Czeski": {
+        "Twój Osobisty Asystent Językowy AI": "Váš osobní jazykový asistent AI",
+        "Wznieś naukę języków obcych na wyższy poziom dzięki sztucznej inteligencji. Lingilo łączy nowoczesne modele LLM, algorytmy powtórek i wyszukiwanie semantyczne w jednym miejscu.": "Posuňte studium cizích jazyků na vyšší úroveň díky umělé inteligenci.",
+        "Inteligentne Fiszki (SM-2) z AI i bazą Tatoeba": "Chytré kartičky (SM-2) s AI a databází Tatoeba",
+        "Korekta Tekstów z wyjaśnieniem błędów": "Oprava textů s vysvětlením chyb",
+        "Generowanie Mowy (TTS) i trening wymowy": "Generování řeči (TTS) a trénink výslovnosti",
+        "Zaawansowane Tłumaczenia z zachowaniem kontekstu": "Pokročilé překlady se zachováním kontextu",
+        "Baza Notatek z wyszukiwaniem semantycznym": "Databáze poznámok se sémantickým vyhledáváním",
+        "Czat z Ekspertem językowym w czasie rzeczywistym": "Chat s jazykovým expertom v reálném čase"
+    }
+}
+
+# Automatyczne dołączenie słownika powitalnego do głównego słownika STATIC_TRANSLATIONS
+for lang, translations in WELCOME_SCREEN_TRANSLATIONS.items():
+    if lang not in STATIC_TRANSLATIONS:
+        STATIC_TRANSLATIONS[lang] = {}
+    STATIC_TRANSLATIONS[lang].update(translations)
+
+
+# ==========================================
+# FUNKCJA MAIN Z NOWYM EKRANEM POWITALNYM
+# ==========================================
 def main():
     st.set_page_config(page_title=_("Lingilo - Twój pomocnik językowy"), layout="wide")
     
     if "token" not in st.session_state:
-        st.title("🔐 " + _("Zaloguj się do Lingilo"))
+        st.title("🌍 Lingilo")
+        st.subheader(_("Twój Osobisty Asystent Językowy AI"))
+        
+        st.markdown(_("Wznieś naukę języków obcych na wyższy poziom dzięki sztucznej inteligencji. Lingilo łączy nowoczesne modele LLM, algorytmy powtórek i wyszukiwanie semantyczne w jednym miejscu."))
+        
+        col_f1, col_f2 = st.columns(2)
+        with col_f1:
+            st.markdown(
+                f"* 📚 **{_('Inteligentne Fiszki (SM-2) z AI i bazą Tatoeba')}**\n"
+                f"* ✍️ **{_('Korekta Tekstów z wyjaśnieniem błędów')}**\n"
+                f"* 🗣️ **{_('Generowanie Mowy (TTS) i trening wymowy')}**"
+            )
+        with col_f2:
+            st.markdown(
+                f"* 🌐 **{_('Zaawansowane Tłumaczenia z zachowaniem kontekstu')}**\n"
+                f"* 🧠 **{_('Baza Notatek z wyszukiwaniem semantycznym')}**\n"
+                f"* 💬 **{_('Czat z Ekspertem językowym w czasie rzeczywistym')}**"
+            )
+            
+        st.markdown("---")
         
         ui_langs_display = [NATIVE_LANGUAGE_NAMES[l] for l in SUPPORTED_LANGUAGES]
         sel_ui_trans = st.selectbox(
