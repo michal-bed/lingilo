@@ -1071,7 +1071,7 @@ async def app_core(current_user):
                         st.session_state.fc_sent_options = draft.get('sentences', [])
                         st.session_state.p_state['fc_selected_sents'] = draft.get('sentences', [])
                         st.rerun()
-                    
+            
             if c2.button(_("Pobierz zdania z bazy Tatoeba")) and card_word:
                 with st.spinner(_("Szukam autentycznych przykładów...")):
                     api_sents = get_example_sentences_api(card_word, card_lang, target_lang)
@@ -1157,9 +1157,18 @@ async def app_core(current_user):
                     st.session_state.current_flashcard_draft = False
                     st.session_state.flashcard_audio_bytes = None
                     
+                    # --- W PEŁNI DZIAŁAJĄCE CZYSZCZENIE STANU WIDGETÓW I SŁOWNIKA ---
                     keys_to_clear = ['flashcard_input_word', 'fc_base_form', 'fc_grammar_info', 'fc_forms', 'fc_custom_defs', 'fc_custom_sents', 'fc_custom_notes']
-                    for k in keys_to_clear: st.session_state.p_state[k] = ""
-                    for k in ['fc_selected_defs', 'fc_selected_sents']: st.session_state.p_state[k] = []
+                    for k in keys_to_clear: 
+                        st.session_state.p_state[k] = ""
+                        if f"wid_{k}" in st.session_state:
+                            del st.session_state[f"wid_{k}"]
+                            
+                    for k in ['fc_selected_defs', 'fc_selected_sents']: 
+                        st.session_state.p_state[k] = []
+                        if f"wid_{k}" in st.session_state:
+                            del st.session_state[f"wid_{k}"]
+                            
                     st.session_state.fc_def_options = []
                     st.session_state.fc_sent_options = []
                         
