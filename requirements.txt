@@ -16,3 +16,6 @@ certifi
 sentence-transformers
 numpy
 torchvision
+langfuse
+litellm
+mcp
