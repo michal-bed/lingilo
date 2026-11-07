@@ -1057,35 +1057,75 @@ async def app_core(current_user):
                     await update_user_preference(current_user, "translation_target_language", target_lang)
             
             c1, c2, c3 = st.columns(3)
+            
+            # Pełna lista kluczy formularza do synchronizacji
+            sync_keys = ['fc_base_form', 'fc_grammar_info', 'fc_forms', 'fc_custom_defs', 'fc_custom_sents', 'fc_custom_notes', 'fc_selected_defs', 'fc_selected_sents']
+
+            # --- 1. PRZYCISK AI ---
             if c1.button(_("Pobierz dane przez AI")) and card_word:
                 with st.spinner(_("AI analizuje słowo jako API...")):
                     draft = await generate_word_data(card_word, card_lang, target_lang)
                     if draft:
+                        # Krok 1: Zapisz to co było na ekranie
+                        for k in sync_keys:
+                            if f"wid_{k}" in st.session_state:
+                                st.session_state.p_state[k] = st.session_state[f"wid_{k}"]
+
                         st.session_state.current_flashcard_draft = True
+                        
+                        # AI zawsze aktualizuje główną wiedzę gramatyczną
                         st.session_state.p_state['fc_base_form'] = draft.get('base_form', '')
                         st.session_state.p_state['fc_grammar_info'] = draft.get('grammar_info', '')
-                        
                         forms = draft.get('forms', [])
                         st.session_state.p_state['fc_forms'] = ", ".join(forms) if isinstance(forms, list) else forms
-                        
                         st.session_state.fc_def_options = draft.get('definitions', [])
                         st.session_state.p_state['fc_selected_defs'] = draft.get('definitions', [])
                         
-                        st.session_state.fc_sent_options = draft.get('sentences', [])
-                        st.session_state.p_state['fc_selected_sents'] = draft.get('sentences', [])
+                        # ZDANIA - Połączenie AI z tym co już było (np. z Tatoeba)
+                        ai_sents = draft.get('sentences', [])
+                        curr_opts = st.session_state.get('fc_sent_options', [])
+                        curr_sel = st.session_state.p_state.get('fc_selected_sents', [])
+                        
+                        new_sents = [s for s in ai_sents if s not in curr_opts]
+                        st.session_state.fc_sent_options = curr_opts + new_sents
+                        st.session_state.p_state['fc_selected_sents'] = curr_sel + new_sents
+                        
+                        # Krok 3: Zniszcz widgety fizyczne, by wymusić zaciągnięcie nowych wartości
+                        for k in sync_keys:
+                            st.session_state.pop(f"wid_{k}", None)
+                            
                         st.rerun()
-            
+
+            # --- 2. PRZYCISK TATOEBA ---
             if c2.button(_("Pobierz zdania z bazy Tatoeba")) and card_word:
                 with st.spinner(_("Szukam autentycznych przykładów...")):
                     api_sents = get_example_sentences_api(card_word, card_lang, target_lang)
                     if api_sents:
+                        # Krok 1: Zapisz absolutnie wszystko z ekranu (żeby nie zniszczyć pracy AI lub Ręcznej)
+                        for k in sync_keys:
+                            if f"wid_{k}" in st.session_state:
+                                st.session_state.p_state[k] = st.session_state[f"wid_{k}"]
+
                         st.session_state.current_flashcard_draft = True
-                        st.session_state.fc_sent_options.extend(api_sents)
-                        st.session_state.p_state['fc_selected_sents'].extend(api_sents)
+                        
+                        # ZDANIA - Połączenie Tatoeba z obecnym stanem
+                        curr_opts = st.session_state.get('fc_sent_options', [])
+                        curr_sel = st.session_state.p_state.get('fc_selected_sents', [])
+                        
+                        new_sents = [s for s in api_sents if s not in curr_opts]
+                        if new_sents:
+                            st.session_state.fc_sent_options = curr_opts + new_sents
+                            st.session_state.p_state['fc_selected_sents'] = curr_sel + new_sents
+                        
+                        # Krok 3: Zniszcz widgety fizyczne
+                        for k in sync_keys:
+                            st.session_state.pop(f"wid_{k}", None)
+                            
                         st.rerun()
                     else: 
                         st.warning(_("API nie znalazło przykładów."))
 
+            # --- 3. PRZYCISK RĘCZNY ---
             if c3.button(_("Wprowadź ręcznie")) and card_word:
                 st.session_state.current_flashcard_draft = True
                 st.session_state.p_state['fc_base_form'] = card_word
@@ -1095,6 +1135,11 @@ async def app_core(current_user):
                 st.session_state.p_state['fc_selected_defs'] = []
                 st.session_state.fc_sent_options = []
                 st.session_state.p_state['fc_selected_sents'] = []
+                
+                # Zniszcz widgety, wyczyść cały formularz
+                for k in sync_keys:
+                    st.session_state.pop(f"wid_{k}", None)
+                    
                 st.rerun()
             
             if st.session_state.current_flashcard_draft:
