@@ -19,3 +19,4 @@ torchvision
 langfuse
 litellm
 mcp
+extra-streamlit-components

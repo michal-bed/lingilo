@@ -38,6 +38,7 @@ from litellm import acompletion
 import instructor
 import uuid
 import base64
+import extra_streamlit_components as stx
 
 # Wyciszamy wewnętrzne logowanie LiteLLM żeby nie wywalało błędu Task was destroyed
 litellm.success_callback = []
@@ -273,11 +274,16 @@ def calculate_sm2(quality: int, repetition: int, easiness_factor: float, interva
     return repetition, easiness_factor, interval
 
 def cosine_similarity(v1, v2):
-    dot_product = np.dot(v1, v2)
-    norm_v1 = np.linalg.norm(v1)
-    norm_v2 = np.linalg.norm(v2)
+    # Wymuszamy tablice numpy dla szybkości i bezbłędności obliczeń wektorowych
+    vec1 = np.array(v1)
+    vec2 = np.array(v2)
+    
+    dot_product = np.dot(vec1, vec2)
+    norm_v1 = np.linalg.norm(vec1)
+    norm_v2 = np.linalg.norm(vec2)
+    
     if norm_v1 == 0 or norm_v2 == 0: return 0.0
-    return dot_product / (norm_v1 * norm_v2)
+    return float(dot_product / (norm_v1 * norm_v2))
 
 
 def get_model_and_params():
@@ -581,7 +587,7 @@ STATIC_TRANSLATIONS = {
     "Holenderski": {"Polski": "Pools", "Angielski": "Engels", "Niemiecki": "Duits", "Holenderski": "Nederlands", "Francuski": "Frans", "Hiszpański": "Spaans", "Włoski": "Italiaans", "Portugalski": "Portugees", "Rosyjski": "Russisch", "Ukraiński": "Oekraïens", "Białoruski": "Wit-Russisch", "Słowacki": "Slowaaks", "Czeski": "Tsjechisch", "Ustawienia": "Instellingen", "Język interfejsu aplikacji:": "App interfacetaal:", "Dostawca modelu AI:": "AI aanbieder:", "Opcja płatna jest tymczasowo niedostępna. System automatycznie użyje darmowego modelu Groq.": "Betaalde optie niet beschikbaar.", "Wybierz zadanie:": "Selecteer taak:", "Groq (Darmowe chmurowe)": "Groq (Gratis Cloud)", "OpenAI (Płatne)": "OpenAI (Betaald)", "Tłumaczenie": "Vertaling", "Korekta tekstu": "Tekstcorrectie", "Generowanie audio": "Audio-generatie", "Zapytanie": "Vraag", "Notatki": "Notities", "Powtórki": "Flashcards", "Historia i Zapisane": "Geschiedenis & Opgeslagen", "Wprowadź tekst do przetłumaczenia": "Voer tekst in om te vertalen", "Twój tekst:": "Jouw tekst:", "Język docelowy": "Doeltaal", "Tłumacz": "Vertaal", "Trwa tłumaczenie...": "Vertalen...", "Jesteś tłumaczem. Zwróć tylko czyste tłumaczenie.": "Je bent een vertaler.", "Korekta błędów i redakcja": "Foutcorrectie", "Tekst do poprawy:": "Tekst om te corrigeren:", "Popraw tekst": "Corrigeer tekst", "Analiza błędów...": "Fouten analyseren...", "Popraw błędy. Zwróć poprawiony tekst.": "Corrigeer fouten.", "Następnie w punktach wyjaśnij wprowadzone zmiany i krótko uzasadnij, dlaczego nowa wersja jest lepsza.": "Leg vervolgens de wijzigingen uit.", "Zamiana tekstu na mowę": "Tekst naar spraak", "Wpisz tekst:": "Voer tekst in:", "Generuj wymowę": "Genereer spraak", "Przygotowywanie...": "Voorbereiden...", "Zapisz to Audio do Historii": "Sla audio op", "Wygenerowane TTS": "Gegenereerde TTS", "Zapisano audio w historii!": "Audio opgeslagen!", "Czat z ekspertem językowym": "Chat met expert", "Zadaj pytanie:": "Stel een vraag:", "Zapytaj": "Vraag", "Piszę odpowiedź...": "Antwoord schrijven...", "Jesteś ekspertem językowym.": "Je bent een taalexpert.", "Zapisuj mowę i tekst z wyszukiwaniem semantycznym": "Sla op met semantisch zoeken", "🎤 Nagraj notatkę głosową": "🎤 Neem spraaknotitie op", "Opcjonalnie: Transkrybuj mowę": "Transcribeer spraak", "Rozpoznawanie mowy...": "Spraakherkenning...", "Błąd transkrypcji": "Transcriptiefout", "Treść notatki tekstowej (lub transkrypcji):": "Inhoud van notitie:", "Zapisz Notatkę do bazy": "Sla notitie op", "Notatka jest pusta!": "Notitie is leeg!", "Zapisywanie i generowanie wektorów...": "Opslaan...", "Notatka zapisana pomyślnie!": "Notitie succesvol opgeslagen!", "Twój system nauki (Spaced Repetition)": "Jouw leersysteem", "Nauka (SM-2)": "Studeren (SM-2)", "Dodaj Fiszki": "Voeg Flashcards toe", "Edytuj / Usuń": "Bewerken / Verwijderen", "🎉 Gratulacje! Brak słówek na dziś.": "🎉 Gefeliciteerd! Geen woorden.", "Do powtórzenia": "Te herhalen", "Język": "Taal", "Baza": "Basis", "Gramatyka": "Grammatica", "Pokaż odpowiedź": "Toon antwoord", "Definicje": "Definities", "Odmiany": "Verbuigingen", "Przykłady": "Voorbeelden", "Nie pamiętam": "Vergeten", "Z trudem": "Moeilijk", "Dobrze": "Goed", "Z łatwością": "Makkelijk", "Kreator z analizą lingwistyczną AI": "Maker met AI-analyse", "Wpisz słowo lub wyrażenie:": "Voer een woord in:", "Język słowa:": "Taal van het woord:", "Pobierz dane przez AI": "Haal gegevens op (AI)", "AI analizuje słowo jako API...": "AI analyseert...", "Pobierz zdania z bazy Tatoeba": "Haal zinnen op", "Szukam autentycznych przykładów...": "Zoeken...", "API nie znalazło przykładów.": "API heeft niets gevonden.", "Wprowadź ręcznie": "Handmatig invoeren", "Forma podstawowa": "Basisvorm", "Info gramatyczne": "Grammatica-info", "Wybierz definicje do zapisania:": "Selecteer definities:", "Wybierz przykłady zdań:": "Selecteer zinnen:", "Zapisz gotową fiszkę": "Sla flashcard op", "Fiszka dodana pomyślnie!": "Flashcard toegevoegd!", "Twoje własne uwagi (opcjonalnie):": "Jouw eigen notities:", "Twoje uwagi": "Jouw notities", "Język tłumaczenia (definicje):": "Vertaaltaal:", "Słowo": "Woord", "💾 Zapisz zmiany": "💾 Opslaan", "Audio (opcjonalnie):": "Audio (optioneel):", "Generuj wymowę (TTS)": "Genereer uitspraak", "🎤 Nagraj wymowę": "🎤 Neem uitspraak op", "Usuń przypisane audio": "Audio verwijderen", "Następna": "Volgende", "🗑 Usuń fiszkę": "🗑 Verwijder flashcard", "Centrum Danych i Historii": "Datacentrum", "Pełna Historia Aktywności": "Geschiedenis", "Baza Notatek (Wyszukiwanie Semantyczne)": "Notitiebasis", "Brak historii aktywności.": "Geen geschiedenis.", "Wejście": "Invoer", "Wyjście": "Uitvoer", "Wyszukiwanie semantyczne jest nieaktywne (wymaga biblioteki sentence-transformers). Działa wyszukiwanie tekstowe.": "Semantisch zoeken inactief.", "Szukaj w notatkach (po tekście lub znaczeniu):": "Zoek:", "Typ": "Type", "📝 Zapisz jako notatkę": "📝 Opslaan als notitie", "📇 Przekaż do fiszek": "📇 Naar flashcards", "🔊 Przekaż do TTS": "🔊 Naar TTS", "Zapisano w notatkach!": "Opgeslagen!", "Zalogowano pomyślnie": "Succesvol ingelogd", "Wyloguj": "Uitloggen", "Zaloguj się do Lingilo": "Log in bij Lingilo", "Zaloguj door Auth0": "Inloggen via Auth0", "Błąd komunikacji z Auth0": "Communicatiefout Auth0", "Błąd AI": "AI-fout", "Błąd TTS": "TTS-fout", "Lingilo - Twój pomocnik językowy": "Lingilo - Jouw assistent", "Własne definicje (każda w nowej linii - opcjonalnie):": "Eigen definities:", "np. definicja 1\ndefinicja 2": "bijv. def 1\ndef 2", "Własne przykłady (każdy w nowej linii - opcjonalnie):": "Eigen voorbeelden:", "np. To jest mój pierwszy przykład.\nA to jest mój drugi przykład.": "bijv. Voorbeeld 1\nVoorbeeld 2", "TEXT": "TEKST", "AUDIO": "AUDIO", "GENERATED_AUDIO": "GEGENEREERDE AUDIO", "TRANSLATION": "VERTALING", "CORRECTION": "CORRECTIE", "TEXT_TO_SPEECH": "TEKST NAAR SPRAAK", "INQUIRY": "VRAAG", "REVISION": "HERZIENING"},
     "Czeski": {"Polski": "Polština", "Angielski": "Angličtina", "Niemiecki": "Němčina", "Holenderski": "Nizozemština", "Francuski": "Francouzština", "Hiszpański": "Španělština", "Włoski": "Italština", "Portugalski": "Portugalština", "Rosyjski": "Ruština", "Ukraiński": "Ukrajinština", "Białoruski": "Běloruština", "Słowacki": "Slovenština", "Czeski": "Čeština", "Ustawienia": "Nastavení", "Język interfejsu aplikacji:": "Jazyk rozhraní:", "Dostawca modelu AI:": "Poskytovatel AI:", "Opcja płatna jest tymczasowo niedostępna. System automatycznie użyje darmowego modelu Groq.": "Placená verze není dostupná.", "Wybierz zadanie:": "Vyberte úkol:", "Groq (Darmowe chmurowe)": "Groq (Bezplatný Cloud)", "OpenAI (Płatne)": "OpenAI (Placené)", "Tłumaczenie": "Překlad", "Korekta tekstu": "Oprava textu", "Generowanie audio": "Generování zvuku", "Zapytanie": "Dotaz", "Notatki": "Poznámky", "Powtórki": "Kartičky", "Historia i Zapisane": "Historie", "Wprowadź tekst do przetłumaczenia": "Zadejte text k překladu", "Twój tekst:": "Váš text:", "Język docelowy": "Cílový jazyk", "Tłumacz": "Přeložit", "Trwa tłumaczenie...": "Překládám...", "Jesteś tłumaczem. Zwróć tylko czyste tłumaczenie.": "Jste překladatel. Vraťte pouze překlad.", "Korekta błędów i redakcja": "Oprava chyb", "Tekst do poprawy:": "Text k opravě:", "Popraw tekst": "Opravit text", "Analiza błędów...": "Analýza chyb...", "Popraw błędy. Zwróć poprawiony tekst.": "Opravte chyby. Vraťte opravený text.", "Następnie w punktach wyjaśnij wprowadzone zmiany i krótko uzasadnij, dlaczego nowa wersja jest lepsza.": "Poté v bodech vysvětlete provedené změny.", "Zamiana tekstu na mowę": "Text na řeč", "Wpisz tekst:": "Zadejte text:", "Generuj wymowę": "Generovat výslovnost", "Przygotowywanie...": "Připravuji...", "Zapisz to Audio do Historii": "Uložit zvuk", "Wygenerowane TTS": "Generované TTS", "Zapisano audio w historii!": "Zvuk uložen!", "Czat z ekspertem językowym": "Chat s expertem", "Zadaj pytanie:": "Položte otázku:", "Zapytaj": "Zeptat se", "Piszę odpowiedź...": "Píšu odpověď...", "Jesteś ekspertem językowym.": "Jste jazykový expert.", "Zapisuj mowę i tekst z wyszukiwaniem semantycznym": "Uložte řeč s sémantickým vyhledáváním", "🎤 Nagraj notatkę głosową": "🎤 Nahrát poznámku", "Opcjonalnie: Transkrybuj mowę": "Přepsat řeč", "Rozpoznawanie mowy...": "Rozpoznávanie řeči...", "Błąd transkrypcji": "Chyba přepisu", "Treść notatki tekstowej (lub transkrypcji):": "Obsah poznámky:", "Zapisz Notatkę do bazy": "Uložit poznámku", "Notatka jest pusta!": "Poznámka je prázdná!", "Zapisywanie i generowanie wektorów...": "Ukládám...", "Notatka zapisana pomyślnie!": "Poznámka uložena!", "Twój system nauki (Spaced Repetition)": "Váš výukový systém", "Nauka (SM-2)": "Studium (SM-2)", "Dodaj Fiszki": "Přidat kartičky", "Edytuj / Usuń": "Upravit / Smazat", "🎉 Gratulacje! Brak słówek na dziś.": "🎉 Gratulujeme! Dnes žádná slovíčka.", "Do powtórzenia": "K opakování", "Język": "Jazyk", "Baza": "Základ", "Gramatyka": "Gramatika", "Pokaż odpowiedź": "Ukázat odpověď", "Definicje": "Definice", "Odmiany": "Skloňování", "Przykłady": "Příklady", "Nie pamiętam": "Nepamatuji", "Z trudem": "Těžké", "Dobrze": "Dobře", "Z łatwością": "Snadné", "Kreator z analizą lingwistyczną AI": "Tvůrce s AI analýzou", "Wpisz słowo lub wyrażenie:": "Zadejte slovo:", "Język słowa:": "Jazyk slova:", "Pobierz dane przez AI": "Získat data z AI", "AI analizuje słowo jako API...": "AI analyzuje slovo...", "Pobierz zdania z bazy Tatoeba": "Získat věty z Tatoeba", "Szukam autentycznych przykładów...": "Hledám příklady...", "API nie znalazło příkladů.": "API nenašlo příklady.", "Wprowadź ręcznie": "Zadat ručně", "Forma podstawowa": "Základní forma", "Info gramatyczne": "Gramatické info", "Wybierz definicje do zapisania:": "Vyberte definice:", "Wybierz przykłady zdań:": "Vyberte věty:", "Zapisz gotową fiszkę": "Uložit kartičku", "Fiszka dodana pomyślnie!": "Kartička přidána!", "Twoje własne uwagi (opcjonalnie):": "Vaše vlastní poznámky:", "Twoje uwagi": "Vaše poznámky", "Język tłumaczenia (definicje):": "Jazyk překladu:", "Słowo": "Slovo", "💾 Zapisz zmiany": "💾 Uložit změny", "Audio (opcjonalnie):": "Zvuk (volitelné):", "Generuj wymowę (TTS)": "Generovat výslovnost", "🎤 Nagraj wymowę": "🎤 Nahrát výslovnost", "Usuń przypisane audio": "Odstranit zvuk", "Następna": "Další", "🗑 Usuń fiszkę": "🗑 Smazat kartičku", "Centrum Danych i Historii": "Datové centrum", "Pełna Historia Aktywności": "Kompletní historie", "Baza Notatek (Wyszukiwanie Semantyczne)": "Poznámky", "Brak historii aktywności.": "Žádná historie.", "Wejście": "Vstup", "Wyjście": "Výstup", "Wyszukiwanie semantyczne jest nieaktywne (wymaga biblioteki sentence-transformers). Działa wyszukiwanie tekstowe.": "Sémantické hledání neaktivní.", "Szukaj w notatkach (po tekście lub znaczeniu):": "Hledat:", "Typ": "Typ", "📝 Zapisz jako notatkę": "📝 Uložit jako poznámku", "📇 Przekaż do fiszek": "📇 Odeslat do kartiček", "🔊 Przekaż do TTS": "🔊 Odeslat do TTS", "Zapisano w notatkach!": "Uloženo v poznámkách!", "Zalogowano pomyślnie": "Úspěšně přihlášeno", "Wyloguj": "Odhlásit se", "Zaloguj się do Lingilo": "Přihlaste se do Lingilo", "Zaloguj przez Auth0": "Přihlásit přes Auth0", "Błąd komunikacji z Auth0": "Chyba komunikace s Auth0", "Błąd AI": "Chyba AI", "Błąd TTS": "Chyba TTS", "Lingilo - Twój pomocnik językowy": "Lingilo - Váš asistent", "Własne definicje (każda w nowej linii - opcjonalnie):": "Vlastní definice:", "np. definicja 1\ndefinicja 2": "např. definice 1\ndefinice 2", "Własne przykłady (każdy w nowej linii - opcjonalnie):": "Vlastní příklady:", "np. To jest mój pierwszy przykład.\nA to jest mój drugi przykład.": "např. Příklad 1\nPříklad 2", "TEXT": "TEXT", "AUDIO": "AUDIO", "GENERATED_AUDIO": "GENEROVANÉ AUDIO", "TRANSLATION": "PŘEKLAD", "CORRECTION": "OPRAVA", "TEXT_TO_SPEECH": "TEXT NA ŘEČ", "INQUIRY": "DOTAZ", "REVISION": "OPAKOVÁNÍ"},
     "Portugalski": {"Polski": "Polonês", "Angielski": "Inglês", "Niemiecki": "Alemão", "Holenderski": "Holandês", "Francuski": "Francês", "Hiszpański": "Espanhol", "Włoski": "Italiano", "Portugalski": "Português", "Rosyjski": "Russo", "Ukraiński": "Ucraniano", "Białoruski": "Bielorrusso", "Słowacki": "Eslovaco", "Czeski": "Tcheco", "Ustawienia": "Configurações", "Język interfejsu aplikacji:": "Idioma da interface:", "Dostawca modelu AI:": "Provedor de IA:", "Opcja płatna jest tymczasowo niedostępna. System automatycznie użyje darmowego modelu Groq.": "A opção paga está indisponível.", "Wybierz zadanie:": "Selecionar tarefa:", "Groq (Darmowe chmurowe)": "Groq (Nuvem Gratuita)", "OpenAI (Płatne)": "OpenAI (Pago)", "Tłumaczenie": "Tradução", "Korekta tekstu": "Correção de texto", "Generowanie audio": "Geração de áudio", "Zapytanie": "Consulta", "Notatki": "Notas", "Powtórki": "Revisões", "Historia i Zapisane": "Histórico e Salvos", "Wprowadź tekst do przetłumaczenia": "Insira o texto para traduzir", "Twój tekst:": "Seu texto:", "Język docelowy": "Idioma de destino", "Tłumacz": "Traduzir", "Trwa tłumaczenie...": "Traduzindo...", "Jesteś tłumaczem. Zwróć tylko czyste tłumaczenie.": "Você é um tradutor. Retorne apenas a tradução pura.", "Korekta błędów i redakcja": "Correção e edição de erros", "Tekst do poprawy:": "Texto a corrigir:", "Popraw tekst": "Corrigir texto", "Analiza błędów...": "Analisando erros...", "Popraw błędy. Zwróć poprawiony tekst.": "Corrija os erros.", "Następnie w punktach wyjaśnij wprowadzone zmiany i krótko uzasadnij, dlaczego nowa wersja jest lepsza.": "Em seguida, explique as alterações.", "Zamiana tekstu na mowę": "Texto para fala", "Wpisz tekst:": "Digite o texto:", "Generuj wymowę": "Gerar pronúncia", "Przygotowywanie...": "Preparando...", "Zapisz to Audio do Historii": "Salvar Áudio no Histórico", "Wygenerowane TTS": "TTS Gerado", "Zapisano audio w historii!": "Áudio salvo no histórico!", "Czat z ekspertem językowym": "Chat com especialista", "Zadaj pytanie:": "Faça uma pergunta:", "Zapytaj": "Perguntar", "Piszę odpowiedź...": "Escrevendo resposta...", "Jesteś ekspertem językowym.": "Você é um especialista em idiomas.", "Zapisuj mowę i tekst z wyszukiwaniem semantycznym": "Salve voz e texto com pesquisa semântica", "🎤 Nagraj notatkę głosową": "🎤 Gravar nota de voz", "Opcjonalnie: Transkrybuj mowę": "Transcrever voz", "Rozpoznawanie mowy...": "Reconhecimento de voz...", "Błąd transkrypcji": "Erro de transcrição", "Treść notatki tekstowej (lub transkrypcji):": "Conteúdo da nota:", "Zapisz Notatkę do bazy": "Salvar Nota", "Notatka jest pusta!": "A nota está vazia!", "Zapisywanie i generowanie wektorów...": "Salvando...", "Notatka zapisana pomyślnie!": "Nota salva com sucesso!", "Twój system nauki (Spaced Repetition)": "Seu sistema de aprendizado", "Nauka (SM-2)": "Estudo (SM-2)", "Dodaj Fiszki": "Adicionar Cartões", "Edytuj / Usuń": "Editar / Excluir", "🎉 Gratulacje! Brak słówek na dziś.": "🎉 Parabéns! Sem palavras por hoje.", "Do powtórzenia": "Para revisar", "Język": "Idioma", "Baza": "Base", "Gramatyka": "Gramática", "Pokaż odpowiedź": "Mostrar resposta", "Definicje": "Definições", "Odmiany": "Flexões", "Przykłady": "Exemplos", "Nie pamiętam": "Não lembro", "Z trudem": "Com dificuldade", "Dobrze": "Bom", "Z łatwością": "Fácil", "Kreator z analizą lingwistyczną AI": "Criador com análise de IA", "Wpisz słowo lub wyrażenie:": "Digite a palavra ou expressão:", "Język słowa:": "Idioma da palavra:", "Pobierz dane przez AI": "Buscar dados por IA", "AI analizuje słowo jako API...": "A IA está analisando a palavra...", "Pobierz zdania z bazy Tatoeba": "Buscar frases de Tatoeba", "Szukam autentycznych przykładów...": "Buscando exemplos...", "API nie znalazło przykładów.": "A API não encontrou exemplos.", "Wprowadź ręcznie": "Inserir manualmente", "Forma podstawowa": "Forma básica", "Info gramatyczne": "Info gramatical", "Wybierz definicje do zapisania:": "Selecione as definições:", "Wybierz przykłady zdań:": "Selecione frases:", "Zapisz gotową fiszkę": "Salvar cartão", "Fiszka dodana pomyślnie!": "Cartão adicionado!", "Twoje własne uwagi (opcjonalnie):": "Suas próprias notas (opcional):", "Twoje uwagi": "Suas notas", "Język tłumaczenia (definicje):": "Idioma de tradução (definições):", "Słowo": "Palavra", "💾 Zapisz zmiany": "💾 Salvar alterações", "Audio (opcjonalnie):": "Áudio (opcional):", "Generuj wymowę (TTS)": "Gerar pronúncia (TTS)", "🎤 Nagraj wymowę": "🎤 Gravar pronúncia", "Usuń przypisane audio": "Excluir áudio", "Następna": "Próxima", "🗑 Usuń fiszkę": "🗑 Excluir cartão", "Centrum Danych i Historii": "Centro de Dados", "Pełna Historia Aktywności": "Histórico Completo", "Baza Notatek (Wyszukiwanie Semantyczne)": "Base de Notas", "Brak historii aktywności.": "Sem histórico.", "Wejście": "Entrada", "Wyjście": "Saída", "Wyszukiwanie semantyczne jest nieaktywne (wymaga biblioteki sentence-transformers). Działa wyszukiwanie tekstowe.": "Pesquisa semântica inativa.", "Szukaj w notatkach (po tekście lub znaczeniu):": "Pesquisar nas notas:", "Typ": "Tipo", "📝 Zapisz jako notatkę": "📝 Salvar como nota", "📇 Przekaż do fiszek": "📇 Enviar para cartões", "🔊 Przekaż do TTS": "🔊 Enviar para TTS", "Zapisano w notatkach!": "Salvo nas notas!", "Zalogowano pomyślnie": "Login bem-sucedido", "Wyloguj": "Sair", "Zaloguj się do Lingilo": "Entrar no Lingilo", "Zaloguj przez Auth0": "Entrar via Auth0", "Błąd komunikacji z Auth0": "Erro de comunicação com Auth0", "Błąd AI": "Erro de IA", "Błąd TTS": "Erro de TTS", "Lingilo - Twój pomocnik językowy": "Lingilo - Seu assistente", "Własne definicje (każda w nowej linii - opcjonalnie):": "Definições próprias (cada uma em uma nova linha - opcional):", "np. definicja 1\ndefinicja 2": "ex. definição 1\ndefinição 2", "Własne przykłady (każdy w nowej linii - opcjonalnie):": "Exemplos próprios (cada um em uma nova linha - opcional):", "np. To jest mój pierwszy przykład.\nA to jest mój drugi przykład.": "ex. Exemplo 1\nExemplo 2", "TEXT": "TEXTO", "AUDIO": "ÁUDIO", "GENERATED_AUDIO": "ÁUDIO GERADO", "TRANSLATION": "TRADUÇÃO", "CORRECTION": "CORREÇÃO", "TEXT_TO_SPEECH": "TEXTO PARA FALA", "INQUIRY": "CONSULTA", "REVISION": "REVISÃO"},
-    "Rosyjski": {"Polski": "Польский", "Angielski": "Английский", "Niemiecki": "Немецкий", "Holenderski": "Нидерландский", "Francuski": "Французский", "Hiszpański": "Испанский", "Włoski": "Итальянский", "Portugalski": "Португальский", "Rosyjski": "Русский", "Ukraiński": "Украинский", "Białoruski": "Белорусский", "Słowacki": "Словацкий", "Czeski": "Чешский", "Ustawienia": "Настройки", "Język interfejsu aplikacji:": "Язык интерфейса:", "Dostawca modelu AI:": "Провайдер ИИ:", "Opcja płatna jest tymczasowo niedostępna. System automatycznie użyje darmowego modelu Groq.": "Платная опция недоступна.", "Wybierz zadanie:": "Выберите задачу:", "Groq (Darmowe chmurowe)": "Groq (Бесплатное облако)", "OpenAI (Płatne)": "OpenAI (Платный)", "Tłumaczenie": "Перевод", "Korekta tekstu": "Исправление текста", "Generowanie audio": "Генерация аудио", "Zapytanie": "Запрос", "Notatki": "Заметки", "Powtórki": "Карточки", "Historia i Zapisane": "История и Сохраненное", "Wprowadź tekst do przetłumaczenia": "Введите текст для перевода", "Twój tekst:": "Ваш текст:", "Język docelowy": "Целевой язык", "Tłumacz": "Перевести", "Trwa tłumaczenie...": "Перевод...", "Jesteś tłumaczem. Zwróć tylko czyste tłumaczenie.": "Вы переводчик. Верните только чистый перевод.", "Korekta błędów i redakcja": "Исправление ошибок", "Tekst do poprawy:": "Текст для исправления:", "Popraw tekst": "Исправить текст", "Analiza błędów...": "Анализ ошибок...", "Popraw błędy. Zwróć poprawiony tekst.": "Исправьте ошибки.", "Następnie w punktach wyjaśnij wprowadzone zmiany i krótko uzasadnij, dlaczego nowa wersja jest lepsza.": "Затем по пунктах объясните изменения.", "Zamiana tekstu na mowę": "Текст в речь", "Wpisz tekst:": "Введите текст:", "Generuj wymowę": "Сгенерировать произношение", "Przygotowywanie...": "Подготовка...", "Zapisz to Audio do Historii": "Сохранить аудио в историю", "Wygenerowane TTS": "Сгенерированное TTS", "Zapisano audio w historii!": "Аудио сохранено в истории!", "Czat z ekspertem językowym": "Чат с языковым экспертом", "Zadaj pytanie:": "Задайте вопрос:", "Zapytaj": "Спросить", "Piszę odpowiedź...": "Пишу ответ...", "Jesteś ekspertem językowym.": "Вы языковой эксперт.", "Zapisuj mowę i tekst z wyszukiwaniem semantycznym": "Сохраняйте речь и текст с семантическим поиском", "🎤 Nagraj notatkę głosową": "🎤 Записать голосовую заметку", "Opcjonalnie: Transkrybuj mowę": "Дополнительно: Транскрибировать речь", "Rozpoznawanie mowy...": "Распознавание речи...", "Błąd transkrypcji": "Ошибка транскрипции", "Treść notatki tekstowej (lub transkrypcji):": "Текст заметки:", "Zapisz Notatkę do bazy": "Сохранить заметку", "Notatka jest pusta!": "Заметка пуста!", "Zapisywanie i generowanie векторов...": "Сохранение...", "Notatka zapisana pomyślnie!": "Заметка успешно сохралена!", "Twój system nauki (Spaced Repetition)": "Ваша система обучения", "Nauka (SM-2)": "Обучение (SM-2)", "Dodaj Fiszki": "Добавить карточки", "Edytuj / Usuń": "Редактировать / Удалить", "🎉 Gratulacje! Brak słówek na dziś.": "🎉 Поздравляем! На сегодня слов нет.", "Do powtórzenia": "Для повторения", "Język": "Язык", "Baza": "База", "Gramatyka": "Грамматика", "Pokaż odpowiedź": "Показать ответ", "Definicje": "Определения", "Odmiany": "Склонения", "Przykłady": "Примеры", "Nie pamiętam": "Не помню", "Z trudem": "С трудом", "Dobrze": "Хорошо", "Z łatwością": "Легко", "Kreator z analizą lingwistyczną AI": "Создатель с анализом ИИ", "Wpisz słowo lub wyrażenie:": "Введите слово:", "Język słowa:": "Язык слова:", "Pobierz dane przez AI": "Получить данные через ИИ", "AI analizuje słowo jako API...": "ИИ анализирует слово...", "Pobierz zdania z bazy Tatoeba": "Получить предложения Tatoeba", "Szukam autentycznych przykładów...": "Поиск примеров...", "API nie znalazło przykładów.": "API не нашло примеров.", "Wprowadź ręcznie": "Ввести вручную", "Forma podstawowa": "Начальная форма", "Info gramatyczne": "Грамматическая инфо", "Wybierz definicje do zapisania:": "Выберите определения:", "Wybierz przykłady zdań:": "Выберите примеры:", "Zapisz gotową fiszkę": "Сохранить карточку", "Fiszka dodana pomyślnie!": "Карточка добавлена!", "Twoje własne uwagi (opcjonalnie):": "Ваши собственные заметки:", "Twoje uwagi": "Ваши заметки", "Język tłumaczenia (definicje):": "Язык перевода (определения):", "Słowo": "Слово", "💾 Zapisz zmiany": "💾 Сохранить изменения", "Audio (opcjonalnie):": "Аудио (необязательно):", "Generuj wymowę (TTS)": "Сгенерировать произношение (TTS)", "🎤 Nagraj wymowę": "🎤 Записать произношение", "Usuń przypisane audio": "Удалить назначенное аудио", "Następna": "Следующая", "🗑 Usuń fiszkę": "🗑 Удалить карточку", "Centrum Danych i Historii": "Центр данных и истории", "Pełna Historia Aktywności": "Полная история", "Baza Notatek (Wyszukiwanie Semantyczne)": "База заметок (Семантический поиск)", "Brak historii aktywności.": "Нет истории активности.", "Wejście": "Вход", "Wyjście": "Выход", "Wyszukiwanie semantyczne jest nieaktywne (wymaga biblioteki sentence-transformers). Działa wyszukiwanie tekstowe.": "Семантический поиск неактивен.", "Szukaj w notatkach (po tekście lub znaczeniu):": "Искать в заметках:", "Typ": "Тип", "📝 Zapisz jako notatkę": "📝 Сохранить как заметку", "📇 Przekaż do fiszek": "📇 Отправить в карточки", "🔊 Przekaż do TTS": "🔊 Отправить в TTS", "Zapisano w notatkach!": "Сохранено в заметках!", "Zalogowano pomyślnie": "Успешный вход", "Wyloguj": "Выйти", "Zaloguj się do Lingilo": "Войти в Lingilo", "Zaloguj przez Auth0": "Войти через Auth0", "Błąd komunikacji z Auth0": "Ошибка связи с Auth0", "Błąd AI": "Ошибка ИИ", "Błąd TTS": "Ошибка TTS", "Lingilo - Twój pomocnik językowy": "Lingilo - Ваш помощник", "Własne definicje (każda w nowej linii - opcjonalnie):": "Свои определения:", "np. definicja 1\ndefinicja 2": "напр. опред 1\nопред 2", "Własne przykłady (każdy w nowej linii - opcjonalnie):": "Свои примеры:", "np. To jest mój pierwszy przykład.\nA to jest mój drugi przykład.": "напр. Пример 1\nПример 2", "TEXT": "ТЕКСТ", "AUDIO": "АУДИО", "GENERATED_AUDIO": "СГЕНЕРАВАНАЕ АУДИО", "TRANSLATION": "ПЕРЕВОД", "CORRECTION": "ИСПРАВЛЕНИЕ", "TEXT_TO_SPEECH": "ТЕКСТ В РЕЧЬ", "INQUIRY": "ЗАПРОС", "REVISION": "ПОВТОРЕНИЕ"},
+    "Rosyjski": {"Polski": "Польский", "Angielski": "Английский", "Niemiecki": "Немецкий", "Holenderski": "Нидерландский", "Francuski": "Французский", "Hiszpański": "Испанский", "Włoski": "Итальянский", "Portugalski": "Португальский", "Rosyjski": "Русский", "Ukraiński": "Украинский", "Białoruski": "Белорусский", "Słowacki": "Словацкий", "Czeski": "Чешский", "Ustawienia": "Настройки", "Język interfejsu aplikacji:": "Язык интерфейса:", "Dostawca modelu AI:": "Провайдер ИИ:", "Opcja płatna jest tymczasowo niedostępna. System automatycznie użyje darmowego modelu Groq.": "Платная опция недоступна.", "Wybierz zadanie:": "Выберите задачу:", "Groq (Darmowe chmurowe)": "Groq (Бесплатное облако)", "OpenAI (Płatne)": "OpenAI (Платный)", "Tłumaczenie": "Перевод", "Korekta tekstu": "Исправление текста", "Generowanie audio": "Генерация аудио", "Zapytanie": "Запрос", "Notatki": "Заметки", "Powtórki": "Карточки", "Historia i Zapisane": "История и Сохраненное", "Wprowadź tekst do przetłumaczenia": "Введите текст для перевода", "Twój tekst:": "Ваш текст:", "Język docelowy": "Целевой язык", "Tłumacz": "Перевести", "Trwa tłumaczenie...": "Перевод...", "Jesteś tłumaczem. Zwróć tylko czyste tłumaczenie.": "Вы переводчик. Верните только чистый перевод.", "Korekta błędów i redakcja": "Исправление ошибок", "Tekst do poprawy:": "Текст для исправления:", "Popraw tekst": "Исправить текст", "Analiza błędów...": "Анализ ошибок...", "Popraw błędy. Zwróć poprawiony tekst.": "Исправьте ошибки.", "Następnie w punktach wyjaśnij wprowadzone zmiany i krótko uzasadnij, dlaczego nowa wersja jest lepsza.": "Затем по пунктах объясните изменения.", "Zamiana tekstu na mowę": "Текст в речь", "Wpisz tekst:": "Введите текст:", "Generuj wymowę": "Сгенерировать произношение", "Przygotowywanie...": "Подготовка...", "Zapisz to Audio do Historii": "Сохранить аудио в историю", "Wygenerowane TTS": "Сгенерированное TTS", "Zapisano audio w historii!": "Аудио сохранено в истории!", "Czat z ekspertem językowym": "Чат с языковым экспертом", "Zadaj pytanie:": "Задайте вопрос:", "Zapytaj": "Спросить", "Piszę odpowiedź...": "Пишу ответ...", "Jesteś ekspertem językowym.": "Вы языковой эксперт.", "Zapisuj mowę i tekst z wyszukiwaniem semantycznym": "Сохраняйте речь и текст с семантическим поиском", "🎤 Nagraj notatkę głosową": "🎤 Записать голосовую заметку", "Opcjonalnie: Transkrybuj mowę": "Дополнительно: Транскрибировать речь", "Rozpoznawanie mowy...": "Распознавание речи...", "Błąd transkrypcji": "Ошибка транскрипции", "Treść notatki tekstowej (lub transkrypcji):": "Текст заметки:", "Zapisz Notatkę do bazy": "Сохранить заметку", "Notatka jest pusta!": "Заметка пуста!", "Zapisywanie i generowanie wektorów...": "Сохранение...", "Notatka zapisana pomyślnie!": "Заметка успешно сохралена!", "Twój system nauki (Spaced Repetition)": "Ваша система обучения", "Nauka (SM-2)": "Обучение (SM-2)", "Dodaj Fiszki": "Добавить карточки", "Edytuj / Usuń": "Редактировать / Удалить", "🎉 Gratulacje! Brak słówek na dziś.": "🎉 Поздравляем! На сегодня слов нет.", "Do powtórzenia": "Для повторения", "Język": "Язык", "Baza": "База", "Gramatyka": "Грамматика", "Pokaż odpowiedź": "Показать ответ", "Definicje": "Определения", "Odmiany": "Склонения", "Przykłady": "Примеры", "Nie pamiętam": "Не помню", "Z trudem": "С трудом", "Dobrze": "Хорошо", "Z łatwością": "Легко", "Kreator z analizą lingwistyczną AI": "Создатель с анализом ИИ", "Wpisz słowo lub wyrażenie:": "Введите слово:", "Język słowa:": "Язык слова:", "Pobierz dane przez AI": "Получить данные через ИИ", "AI analizuje słowo jako API...": "ИИ анализирует слово...", "Pobierz zdania z bazy Tatoeba": "Получить предложения Tatoeba", "Szukam autentycznych przykładów...": "Поиск примеров...", "API nie znalazło przykładów.": "API не нашло примеров.", "Wprowadź ręcznie": "Ввести вручную", "Forma podstawowa": "Начальная форма", "Info gramatyczne": "Грамматическая инфо", "Wybierz definicje do zapisania:": "Выберите определения:", "Wybierz przykłady zdań:": "Выберите примеры:", "Zapisz gotową fiszkę": "Сохранить карточку", "Fiszka dodana pomyślnie!": "Карточка добавлена!", "Twoje własne uwagi (opcjonalnie):": "Ваши собственные заметки:", "Twoje uwagi": "Ваши заметки", "Język tłumaczenia (definicje):": "Язык перевода (определения):", "Słowo": "Слово", "💾 Zapisz zmiany": "💾 Сохранить изменения", "Audio (opcjonalnie):": "Аудио (необязательно):", "Generuj wymowę (TTS)": "Сгенерировать произношение (TTS)", "🎤 Nagraj wymowę": "🎤 Записать произношение", "Usuń przypisane audio": "Удалить назначенное аудио", "Następna": "Следующая", "🗑 Usuń fiszkę": "🗑 Удалить карточку", "Centrum Danych i Historii": "Центр данных и истории", "Pełna Historia Aktywności": "Полная история", "Baza Notatek (Wyszukiwanie Semantyczne)": "База заметок (Семантический поиск)", "Brak historii aktywności.": "Нет истории активности.", "Wejście": "Вход", "Wyjście": "Выход", "Wyszukiwanie semantyczne jest nieaktywne (wymaga biblioteki sentence-transformers). Działa wyszukiwanie tekstowe.": "Семантический поиск неактивен.", "Szukaj w notatkach (po tekście lub znaczeniu):": "Искать в заметках:", "Typ": "Тип", "📝 Zapisz jako notatkę": "📝 Сохранить как заметку", "📇 Przekaż do fiszek": "📇 Отправить в карточки", "🔊 Przekaż do TTS": "🔊 Отправить в TTS", "Zapisano w notatkach!": "Сохранено в заметках!", "Zalogowano pomyślnie": "Успешный вход", "Wyloguj": "Выйти", "Zaloguj się do Lingilo": "Войти в Lingilo", "Zaloguj przez Auth0": "Войти через Auth0", "Błąd komunikacji z Auth0": "Ошибка связи с Auth0", "Błąd AI": "Ошибка ИИ", "Błąd TTS": "Ошибка TTS", "Lingilo - Twój pomocnik językowy": "Lingilo - Ваш помощник", "Własne definicje (każda w nowej linii - opcjonalnie):": "Свои определения:", "np. definicja 1\ndefinicja 2": "напр. опред 1\nопред 2", "Własne przykłady (każdy w nowej linii - opcjonalnie):": "Свои примеры:", "np. To jest mój pierwszy przykład.\nA to jest mój drugi przykład.": "напр. Пример 1\nПример 2", "TEXT": "ТЕКСТ", "AUDIO": "АУДИО", "GENERATED_AUDIO": "СГЕНЕРАВАНАЕ АУДИО", "TRANSLATION": "ПЕРЕВОД", "CORRECTION": "ИСПРАВЛЕНИЕ", "TEXT_TO_SPEECH": "ТЕКСТ В РЕЧЬ", "INQUIRY": "ЗАПРОС", "REVISION": "ПОВТОРЕНИЕ"},
     "Ukraiński": {"Polski": "Польська", "Angielski": "Англійська", "Niemiecki": "Німецька", "Holenderski": "Нідерландська", "Francuski": "Французька", "Hiszpański": "Іспанська", "Włoski": "Італійська", "Portugalski": "Португальська", "Rosyjski": "Російська", "Ukraiński": "Українська", "Białoruski": "Білоруська", "Słowacki": "Словацька", "Czeski": "Чеська", "Ustawienia": "Налаштування", "Język interfejsu aplikacji:": "Мова інтерфейсу:", "Dostawca modelu AI:": "Провайдер ШІ:", "Opcja płatna jest tymczasowo niedostępna. System automatycznie użyje darmowego modelu Groq.": "Платна опція тимчасово недоступна.", "Wybierz zadanie:": "Виберіть завдання:", "Groq (Darmowe chmurowe)": "Groq (Безкоштовна хмара)", "OpenAI (Płatne)": "OpenAI (Платний)", "Tłumaczenie": "Переклад", "Korekta tekstu": "Корекція тексту", "Generowanie audio": "Генерація аудіо", "Zapytanie": "Запит", "Notatki": "Нотатки", "Powtórki": "Картки", "Historia i Zapisane": "Історія та збережене", "Wprowadź tekst do przetłumaczenia": "Введіть текст для перекладу", "Twój tekst:": "Ваш текст:", "Język docelowy": "Цільова мова", "Tłumacz": "Перекласти", "Trwa tłumaczenie...": "Переклад...", "Jesteś tłumaczem. Zwróć tylko czyste tłumaczenie.": "Ви перекладач. Поверніть лише чистий переклад.", "Korekta błędów i redakcja": "Виправлення помилок", "Tekst do poprawy:": "Текст для виправлення:", "Popraw tekst": "Виправити текст", "Analiza błędów...": "Аналіз помилок...", "Popraw błędy. Zwróć poprawiony tekst.": "Виправте помилки.", "Następnie w punktach wyjaśnij wprowadzone zmiany i krótko uzasadnij, dlaczego nowa wersja jest lepsza.": "Потім по пунктах поясніть внесені зміни.", "Zamiana tekstu na mowę": "Текст у мову", "Wpisz tekst:": "Введіть текст:", "Generuj wymowę": "Згенерувати вимову", "Przygotowywanie...": "Підготовка...", "Zapisz to Audio do Historii": "Зберегти аудіо", "Wygenerowane TTS": "Згенероване TTS", "Zapisano audio w historii!": "Аудіо збережено в історії!", "Czat z ekspertem językowym": "Чат з мовним експертом", "Zadaj pytanie:": "Поставте запитання:", "Zapytaj": "Запитати", "Piszę odpowiedź...": "Пишу відповідь...", "Jesteś ekspertem językowym.": "Ви мовний експерт.", "Zapisuj mowę i tekst z wyszukiwaniem semantycznym": "Зберігайте мову і текст із семантичним пошуком", "🎤 Nagraj notatkę głosową": "🎤 Записати нотатку", "Opcjonalnie: Transkrybuj mowę": "Транскрибувати мову", "Rozpoznawanie mowy...": "Розпізнавання мови...", "Błąd transkrypcji": "Помилка транскрипції", "Treść notatki tekstowej (lub transkrypcji):": "Вміст нотатки:", "Zapisz Notatkę do bazy": "Зберегти нотатку", "Notatka jest pusta!": "Нотатка порожня!", "Zapisywanie i generowanie wektorów...": "Збереження...", "Notatka zapisana pomyślnie!": "Нотатку успішно збережено!", "Twój system nauki (Spaced Repetition)": "Ваша система навчання", "Nauka (SM-2)": "Навчання (SM-2)", "Dodaj Fiszki": "Додати картки", "Edytuj / Usuń": "Редактировать / Видалити", "🎉 Gratulacje! Brak słówek na dziś.": "🎉 Вітаємо! На сьогодні слів немає.", "Do powtórzenia": "Для повторення", "Język": "Мова", "Baza": "База", "Gramatyka": "Граматика", "Pokaż odpowiedź": "Показати відповідь", "Definicje": "Визначення", "Odmiany": "Відмінювання", "Przykłady": "Приклади", "Nie pamiętam": "Не пам'ятаю", "Z trudem": "З труднощами", "Dobrze": "Добре", "Z łatwością": "Легко", "Kreator z analizą lingwistyczną AI": "Творець з аналізом ШІ", "Wpisz słowo lub wyrażenie:": "Введіть слово:", "Język słowa:": "Мова слова:", "Pobierz dane przez AI": "Отримати дані ШІ", "AI analizuje słowo jako API...": "ШІ аналізує слово...", "Pobierz zdania z bazy Tatoeba": "Отримати речення Tatoeba", "Szukam autentycznych przykładów...": "Пошук прикладів...", "API nie znalazło przykładów.": "API не знайшло прикладів.", "Wprowadź ręcznie": "Ввести вручную", "Forma podstawowa": "Початкова форма", "Info gramatyczne": "Граматична інфо", "Wybierz definicje do zapisania:": "Виберіть визначення:", "Wybierz przykłady zdań:": "Виберіть приклади:", "Zapisz gotową fiszkę": "Зберегти картку", "Fiszka dodana pomyślnie!": "Картку додано!", "Twoje własne uwagi (opcjonalnie):": "Ваші власні нотатки:", "Twoje uwagi": "Ваші нотатки", "Język tłumaczenia (definicje):": "Мова перекладу:", "Słowo": "Слово", "💾 Zapisz zmiany": "💾 Зберегти зміни", "Audio (opcjonalnie):": "Аудіо (необов'язково):", "Generuj wymowę (TTS)": "Згенерувати вимову", "🎤 Nagraj wymowę": "🎤 Записати вимову", "Usuń przypisane audio": "Видалити аудіо", "Następna": "Наступная", "🗑 Usuń fiszkę": "🗑 Видалити картку", "Centrum Danych i Historii": "Центр даних та історії", "Pełna Historia Aktywności": "Повна історія активності", "Baza Notatek (Wyszukiwanie Semantyczne)": "База нотаток", "Brak historii aktywności.": "Немає історії активності.", "Wejście": "Вхід", "Wyjście": "Вихід", "Wyszukiwanie semantyczne jest nieaktywne (wymaga biblioteki sentence-transformers). Działa wyszukiwanie tekstowe.": "Семантичний пошук неактивний.", "Szukaj w notatkach (po tekście lub znaczeniu):": "Шукати в нотатках:", "Typ": "Тип", "📝 Zapisz jako notatkę": "📝 Зберегти як нотатку", "📇 Przekaż do fiszek": "📇 Відправити до карток", "🔊 Przekaż do TTS": "🔊 Відправити до TTS", "Zapisano w notatkach!": "Збережено в нотатках!", "Zalogowano pomyślnie": "Успішний вхід", "Wyloguj": "Вийти", "Zaloguj się do Lingilo": "Увійти до Lingilo", "Zaloguj przez Auth0": "Увійти через Auth0", "Błąd komunikacji z Auth0": "Помилка зв'язку з Auth0", "Błąd AI": "Помилка ШІ", "Błąd TTS": "Помилка TTS", "Lingilo - Twój pomocnik językowy": "Lingilo - Ваш помічник", "Własne definicje (każda w nowej linii - opcjonalnie):": "Власні визначення:", "np. definicja 1\ndefinicja 2": "напр. визн 1\nвизн 2", "Własne przykłady (każdy w nowej linii - opcjonalnie):": "Власні приклади:", "np. To jest mój pierwszy przykład.\nA to jest mój drugi przykład.": "напр. Приклад 1\nПриклад 2", "TEXT": "ТЕКСТ", "AUDIO": "АУДІО", "GENERATED_AUDIO": "ЗГЕНЕРАВАНАЕ АУДІО", "TRANSLATION": "ПЕРЕКЛАД", "CORRECTION": "КОРЕКЦІЯ", "TEXT_TO_SPEECH": "ТЕКСТ У МОВУ", "INQUIRY": "ЗАПИТ", "REVISION": "ПОВТОРЕННЯ"},
     "Białoruski": {"Polski": "Польская", "Angielski": "Англійская", "Niemiecki": "Нямецкая", "Holenderski": "Галандская", "Francuski": "Французская", "Hiszpański": "Іспанская", "Włoski": "Італьянская", "Portugalski": "Партугальская", "Rosyjski": "Руская", "Ukraiński": "Украінская", "Białoruski": "Беларуская", "Słowacki": "Славацкая", "Czeski": "Чэшская", "Ustawienia": "Налады", "Język interfejsu aplikacji:": "Мова інтэрфейсу:", "Dostawca modelu AI:": "Правайдэр ШІ:", "Opcja płatna jest tymczasowo niedostępna. System automatycznie użyje darmowego modelu Groq.": "Платная опцыя часова недаступная.", "Wybierz zadanie:": "Выберыце задачу:", "Groq (Darmowe chmurowe)": "Groq (Бясплатнае воблака)", "OpenAI (Płatne)": "OpenAI (Платны)", "Tłumaczenie": "Пераклад", "Korekta tekstu": "Карэкцыя тэксту", "Generowanie audio": "Генерацыя аўдыё", "Zapytanie": "Запыт", "Notatki": "Нататкі", "Powtórki": "Карткі", "Historia i Zapisane": "Гісторыя і захаванае", "Wprowadź tekst do przetłumaczenia": "Увядзіце тэкст dla перакладу", "Twój tekst:": "Ваш тэкст:", "Język docelowy": "Мэтавая мова", "Tłumacz": "Перакласці", "Trwa tłumaczenie...": "Ідзе пераклад...", "Jesteś tłumaczem. Zwróć tylko czyste tłumaczenie.": "Вы перакладчык. Вярніце толькі чысты пераклад.", "Korekta błędów i redakcja": "Выпраўленне памылак", "Tekst do poprawy:": "Тэкст для выпраўлення:", "Popraw tekst": "Выправіць тэкст", "Analiza błędów...": "Аналіз памылак...", "Popraw błędy. Zwróć poprawiony tekst.": "Выпраўце памылкі.", "Następnie w punktach wyjaśnij wprowadzone zmiany i krótko uzasadnij, dlaczego nowa wersja jest lepsza.": "Затым па пунктах растлумачце змены.", "Zamiana tekstu na mowę": "Тэкст у маўленне", "Wpisz tekst:": "Увядзіце тэкст:", "Generuj wymowę": "Згенераваць вымаўленне", "Przygotowywanie...": "Падрыхтоўка...", "Zapisz to Audio do Historii": "Захаваць аўдыё ў гісторыю", "Wygenerowane TTS": "Згенераванае TTS", "Zapisano audio w historii!": "Аўдыё захавана!", "Czat z ekspertem językowym": "Чат з экспертам", "Zadaj pytanie:": "Спытаць:", "Zapytaj": "Спытаць", "Piszę odpowiedź...": "Пішу адказ...", "Jesteś ekspertem językowym.": "Вы моўны эксперт.", "Zapisuj mowę i tekst z wyszukiwaniem semantycznym": "Захоўвайце з семантычным пошукам", "🎤 Nagraj notatkę głosową": "🎤 Запісаць нататку", "Opcjonalnie: Transkrybuj mowę": "Транскрыбаваць", "Rozpoznawanie mowy...": "Распазнаванне маўлення...", "Błąd transkrypcji": "Памылка транскрыпцыі", "Treść notatki tekstowej (lub transkrypcji):": "Змест нататкі:", "Zapisz Notatkę do bazy": "Захаваць нататку", "Notatka jest pusta!": "Нататка пустая!", "Zapisywanie i generowanie wektorów...": "Захаванне...", "Notatka zapisana pomyślnie!": "Нататка паспяхова захавана!", "Twój system nauki (Spaced Repetition)": "Ваша сістэма навучання", "Nauka (SM-2)": "Навучанне (SM-2)", "Dodaj Fiszki": "Дадаць карткі", "Edytuj / Usuń": "Рэдагаваць / Выдаліць", "🎉 Gratulacje! Brak słówek na dziś.": "🎉 Віншуем! Няма слоў на сёння.", "Do powtórzenia": "Да паўтарэння", "Język": "Мова", "Baza": "База", "Gramatyka": "Граматыка", "Pokaż odpowiedź": "Паказаць адказ", "Definicje": "Азначэнні", "Odmiany": "Скланенні", "Przykłady": "Прыклады", "Nie pamiętam": "Не памятаю", "Z trudem": "З цяжкасцю", "Dobrze": "Добра", "Z łatwością": "Лёгка", "Kreator z analizą lingwistyczną AI": "Стваральнік з ІШ-аналізам", "Wpisz słowo lub wyrażenie:": "Увядзіце слова:", "Język słowa:": "Мова слова:", "Pobierz dane przez AI": "Атрымаць дадзеныя (ІШ)", "AI analizuje słowo jako API...": "ІШ аналізуе слова...", "Pobierz zdania z bazy Tatoeba": "Атрымаць сказы Tatoeba", "Szukam autentycznych przykładów...": "Пошук прыкладаў...", "API nie znalazło przykładów.": "API не знайшло прыкладаў.", "Wprowadź ręcznie": "Увесці ўручную", "Forma podstawowa": "Пачатковая форма", "Info gramatyczne": "Граматычная інфо", "Wybierz definicje do zapisania:": "Выберыце азначэнні:", "Wybierz przykłady zdań:": "Выберыце прыклады:", "Zapisz gotową fiszkę": "Захаваць картку", "Fiszka dodana pomyślnie!": "Картка дададзена!", "Twoje własne uwagi (opcjonalnie):": "Вашы ўласныя нататкі:", "Twoje uwagi": "Вашы нататкі", "Język tłumaczenia (definicje):": "Мова перакладу:", "Słowo": "Слова", "💾 Zapisz zmiany": "💾 Захаваць змены", "Audio (opcjonalnie):": "Аўдыё (неабавязкова):", "Generuj wymowę (TTS)": "Згенераваць вымаўленне", "🎤 Nagraj wymowę": "🎤 Запісаць вымаўленне", "Usuń przypisane audio": "Выдаліць аўдыё", "Następna": "Наступная", "🗑 Usuń fiszkę": "🗑 Выдаліць картку", "Centrum Danych i Historii": "Цэнтр дадзеных", "Pełna Historia Aktywności": "Поўная гісторыя", "Baza Notatek (Wyszukiwanie Semantyczne)": "База нататак", "Brak historii aktywności.": "Няма гісторыі.", "Wejście": "Уваход", "Wyjście": "Выхад", "Wyszukiwanie semantyczne jest nieaktywne (wymaga biblioteki sentence-transformers). Działa wyszukiwanie tekstowe.": "Семантычны пошук неактыўны.", "Szukaj w notatkach (po tekście lub znaczeniu):": "Шукаць у нататках:", "Typ": "Тып", "📝 Zapisz jako notatkę": "📝 Захаваць як нататку", "📇 Przekaż do fiszek": "📇 Адправіць у карткі", "🔊 Przekaż do TTS": "🔊 Адправіць у TTS", "Zapisano w notatkach!": "Захавана ў нататках!", "Zalogowano pomyślnie": "Паспяховы ўваход", "Wyloguj": "Выйсці", "Zaloguj się do Lingilo": "Увайсці ў Lingilo", "Zaloguj przez Auth0": "Увайсці праз Auth0", "Błąd komunikacji z Auth0": "Памылка сувязі з Auth0", "Błąd AI": "Памылка ШІ", "Błąd TTS": "Памылка TTS", "Lingilo - Twój pomocnik językowy": "Lingilo - Ваш памочнік", "Własne definicje (każda w nowej linii - opcjonalnie):": "Уласныя азначэнні:", "np. definicja 1\ndefinicja 2": "напр. азначэнне 1\nазначэнне 2", "Własne przykłady (każdy w nowej linii - opcjonalnie):": "Уласныя прыклады:", "np. To jest mój pierwszy przykład.\nA to jest mój drugi przykład.": "напр. Прыклад 1\nПрыклад 2", "TEXT": "ТЭКСТ", "AUDIO": "АЎДЫЁ", "GENERATED_AUDIO": "ЗГЕНЕРАВАНАЕ АЎДЫЁ", "TRANSLATION": "ПЕРАКЛАД", "CORRECTION": "КАРЭКЦЫЯ", "TEXT_TO_SPEECH": "ТЭКСТ У МАЎЛЕННЕ", "INQUIRY": "ЗАПЫТ", "REVISION": "ПАЎТАРЭННЕ"},
     "Słowacki": {"Polski": "Poľština", "Angielski": "Angličtina", "Niemiecki": "Nemčina", "Holenderski": "Holandčina", "Francuski": "Francúzština", "Hiszpański": "Španielčina", "Włoski": "Taliančina", "Portugalski": "Portugalčina", "Rosyjski": "Ruština", "Ukraiński": "Ukrajinčina", "Białoruski": "Bieloruština", "Słowacki": "Slovenčina", "Czeski": "Čeština", "Ustawienia": "Nastavenia", "Język interfejsu aplikacji:": "Jazyk rozhrania:", "Dostawca modelu AI:": "Poskytovateľ AI:", "Opcja płatna jest tymczasowo niedostępna. System automatycznie użyje darmowego modelu Groq.": "Platená verzia nie je dostupná.", "Wybierz zadanie:": "Vyberte úlohu:", "Groq (Darmowe chmurowe)": "Groq (Bezplatný Cloud)", "OpenAI (Płatne)": "OpenAI (Platené)", "Tłumaczenie": "Preklad", "Korekta tekstu": "Oprava textu", "Generowanie audio": "Generovanie zvuku", "Zapytanie": "Dopyt", "Notatki": "Poznámky", "Powtórki": "Kartičky", "Historia i Zapisane": "História a Uložené", "Wprowadź tekst do przetłumaczenia": "Zadajte text na preklad", "Twój tekst:": "Váš text:", "Język docelowy": "Cieľový jazyk", "Tłumacz": "Preložiť", "Trwa tłumaczenie...": "Prekladám...", "Jesteś tłumaczem. Zwróć tylko czyste tłumaczenie.": "Ste prekladateľ. Vráťte iba preklad.", "Korekta błędów i redakcja": "Oprava chýb", "Tekst do poprawy:": "Text na opravu:", "Popraw tekst": "Opraviť text", "Analiza błędów...": "Analýza chýb...", "Popraw błędy. Zwróć poprawiony tekst.": "Opravte chyby. Vráťte opravený text.", "Następnie w punktach wyjaśnij wprowadzone zmiany i krótko uzasadnij, dlaczego nowa wersja jest lepsza.": "Potom v bodoch vysvetlite zmeny a zdôvodnite.", "Zamiana tekstu na mowę": "Text na reč", "Wpisz tekst:": "Zadajte text:", "Generuj wymowę": "Generovať výslovnosť", "Przygotowywanie...": "Pripravujem...", "Zapisz to Audio do Historii": "Uložiť zvuk do histórie", "Wygenerowane TTS": "Generované TTS", "Zapisano audio w historii!": "Zvuk uložený!", "Czat z ekspertem językowym": "Chat s expertom", "Zadaj pytanie:": "Položte otázku:", "Zapytaj": "Spýtať sa", "Piszę odpowiedź...": "Píšem odpoveď...", "Jesteś ekspertem językowym.": "Ste jazykový expert.", "Zapisuj mowę i tekst z wyszukiwaniem semantycznym": "Uložte reč s sémantickým vyhľadávaním", "🎤 Nagraj notatkę głosową": "🎤 Nahrať hlasovú poznámku", "Opcjonalnie: Transkrybuj mowę": "Voliteľné: Prepísať reč", "Rozpoznawanie mowy...": "Rozpoznávanie reči...", "Błąd transkrypcji": "Chyba prepisu", "Treść notatki tekstowej (lub transkrypcji):": "Obsah poznámky:", "Zapisz Notatkę do bazy": "Uložiť poznámku", "Notatka jest pusta!": "Poznámka je prázdna!", "Zapisywanie i generowanie wektorów...": "Ukladám...", "Notatka zapisana pomyślnie!": "Poznámka uložená!", "Twój system nauki (Spaced Repetition)": "Váš výučbový systém", "Nauka (SM-2)": "Štúdium (SM-2)", "Dodaj Fiszki": "Pridať kartičky", "Edytuj / Usuń": "Upraviť / Zmazať", "🎉 Gratulacje! Brak słówek na dziś.": "🎉 Gratulujeme! Dnes žiadne slovíčka.", "Do powtórzenia": "Na opakovanie", "Język": "Jazyk", "Baza": "Základ", "Gramatyka": "Gramatika", "Pokaż odpowiedź": "Ukázať odpoveď", "Definicje": "Definície", "Odmiany": "Skloňovanie", "Przykłady": "Príklady", "Nie pamiętam": "Nepamätám", "Z trudem": "Ťažko", "Dobrze": "Dobre", "Z łatwością": "Ľahko", "Kreator z analizą lingwistyczną AI": "Tvorca s AI analýzou", "Wpisz słowo lub wyrażenie:": "Zadajte slovo:", "Język słowa:": "Jazyk slova:", "Pobierz dane przez AI": "Získať dáta z AI", "AI analizuje słowo jako API...": "AI analyzuje slovo...", "Pobierz zdania z bazy Tatoeba": "Získať vety z Tatoeba", "Szukam autentycznych przykładów...": "Hľadám príklady...", "API nie znalazło przykładów.": "API nenašlo príklady.", "Wprowadź ręcznie": "Zadať ručne", "Forma podstawowa": "Základná forma", "Info gramatyczne": "Gramatické info", "Wybierz definicje do zapisania:": "Vyberte definície:", "Wybierz przykłady zdań:": "Vyberte vety:", "Zapisz gotową fiszkę": "Uložiť kartičku", "Fiszka dodana pomyślnie!": "Kartička pridaná!", "Twoje własne uwagi (opcjonalnie):": "Vaše vlastné poznámky:", "Twoje uwagi": "Vaše poznámky", "Język tłumaczenia (definicje):": "Jazyk prekladu (definície):", "Słowo": "Slovo", "💾 Zapisz zmiany": "💾 Uložiť zmeny", "Audio (opcjonalnie):": "Zvuk (voliteľné):", "Generuj wymowę (TTS)": "Generovať výslovnosť", "🎤 Nagraj wymowę": "🎤 Nahrať výslovnost", "Usuń przypisane audio": "Odstrániť zvuk", "Następna": "Ďalšia", "🗑 Usuń fiszkę": "🗑 Zmazať kartičku", "Centrum Danych i Historii": "Dátové centrum", "Pełna Historia Aktywności": "Kompletná história", "Baza Notatek (Wyszukiwanie Semantyczne)": "Poznámky (Sémantické hľadanie)", "Brak historii aktywności.": "Žiadna história.", "Wejście": "Vstup", "Wyjście": "Výstup", "Wyszukiwanie semantyczne jest nieaktywne (wymaga biblioteki sentence-transformers). Działa wyszukiwanie tekstowe.": "Sémantické hľadanie neaktívne.", "Szukaj w notatkach (po tekście lub znaczeniu):": "Hľadať v poznámkách:", "Typ": "Typ", "📝 Zapisz jako notatkę": "📝 Uložiť ako poznámku", "📇 Przekaż do fiszek": "📇 Odoslať do kartiček", "🔊 Przekaż do TTS": "🔊 Odoslať do TTS", "Zapisano w notatkach!": "Uložené v poznámkách!", "Zalogowano pomyślnie": "Úspešne prihlásené", "Wyloguj": "Odhlásiť sa", "Zaloguj się do Lingilo": "Prihláste sa do Lingilo", "Zaloguj przez Auth0": "Prihlásiť sa cez Auth0", "Błąd komunikacji z Auth0": "Chyba komunikácie s Auth0", "Błąd AI": "Chyba AI", "Błąd TTS": "Chyba TTS", "Lingilo - Twój pomocnik językowy": "Lingilo - Váš asistent", "Własne definicje (każda w nowej linii - opcjonalnie):": "Vlastní definície:", "np. definicja 1\ndefinicja 2": "napr. def 1\ndef 2", "Własne przykłady (każdy w nowej linii - opcjonalnie):": "Vlastné príklady:", "np. To jest mój pierwszy przykład.\nA to jest mój drugi przykład.": "napr. Príklad 1\nPríklad 2", "TEXT": "TEXT", "AUDIO": "AUDIO", "GENERATED_AUDIO": "GENEROVANÉ AUDIO", "TRANSLATION": "PREKLAD", "CORRECTION": "OPRAVA", "TEXT_TO_SPEECH": "TEXT NA REČ", "INQUIRY": "DOPYT", "REVISION": "OPAKOVANIE"}
@@ -697,7 +703,26 @@ async def transcribe_audio(audio_bytes):
 # ==========================================
 # ASYNCHRONICZNY RDZEŃ APLIKACJI
 # ==========================================
-async def app_core(current_user):
+async def app_core(current_user, cookie_manager):
+
+    # 1. Definiujemy funkcję, która wykona się DOKŁADNIE w momencie kliknięcia (na poziomie przeglądarki)
+    def process_logout():
+        try:
+            # Nadpisujemy ciasteczko pustą wartością (wyszyszczenie)
+            cookie_manager.set("auth0_token", "", key="clear_cookie_on_manual_logout")
+        except Exception:
+            pass
+
+        # Czyszczenie stanu sesji Pythona
+        if "token" in st.session_state:
+            del st.session_state.token
+        if "user_info" in st.session_state:
+            del st.session_state.user_info
+            
+        st.session_state.prefs_loaded = False
+        # Ustalamy wysoki licznik prób, aby main() nie szukał starego ciasteczka po przeładowaniu
+        st.session_state.cookie_loop_count = 99  
+        st.query_params.clear()
     
     if "db_initialized" not in st.session_state:
         await create_tables()
@@ -717,20 +742,25 @@ async def app_core(current_user):
             except Exception: pass
                 
         st.session_state.prefs_loaded = True
-    
+
     with st.sidebar:
         st.success("✅ " + _("Zalogowano pomyślnie"))
-        if st.button(_("Wyloguj")):
+
+         # 2. Przekazujemy funkcję do parametru on_click przycisku
+        if st.button(_("Wyloguj"), on_click=process_logout):
+            # Kod tutaj wykonuje się PO pomyślnym wykonaniu process_logout()
             drafts_to_save = st.session_state.p_state.copy()
             current_drafts_json = json.dumps(drafts_to_save)
             if current_drafts_json != st.session_state.get('last_saved_drafts'):
-                await update_user_preference(current_user, "session_drafts", current_drafts_json)
+                try:
+                    loop = asyncio.get_event_loop()
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                loop.run_until_complete(update_user_preference(current_user, "session_drafts", current_drafts_json))
                 st.session_state.last_saved_drafts = current_drafts_json
             
-            del st.session_state.token
-            if "user_info" in st.session_state:
-                del st.session_state.user_info
-            st.session_state.prefs_loaded = False
+            # Wymuszamy restart – teraz ciasteczko jest już na 100% wyczyszczone
             st.rerun()
             
         st.header("⚙️ " + _("Ustawienia"))
@@ -913,28 +943,47 @@ async def app_core(current_user):
     elif current_task == "Notatki":
         st.header(_("Zapisuj mowę i tekst z wyszukiwaniem semantycznym"))
         
-        note_audio = st.audio_input(_("🎤 Nagraj notatkę głosową"))
-        if note_audio: 
-            st.session_state.note_audio_bytes = note_audio.getvalue()
+        if "note_audio_key" not in st.session_state:
+            st.session_state.note_audio_key = f"note_audio_{uuid.uuid4()}"
             
-        if st.session_state.note_audio_bytes:
-            st.success("Plik audio zachowany w pamięci:")
+        note_audio = st.audio_input(_("🎤 Nagraj notatkę głosową"), key=st.session_state.note_audio_key)
+        
+        current_bytes = note_audio.getvalue() if note_audio else None
+        
+        if current_bytes and current_bytes != st.session_state.get("last_processed_audio_bytes"):
+            st.session_state.last_processed_audio_bytes = current_bytes
+            st.session_state.note_audio_bytes = current_bytes
+            
+            st.session_state.p_state['note_audio_text'] = ""
+            st.session_state.pop("wid_note_audio_text", None)
+            st.rerun()
+
+        if st.session_state.get("note_audio_bytes"):
+            st.success("Plik audio gotowy do przetworzenia:")
             st.audio(st.session_state.note_audio_bytes)
-            if st.button("🗑 Usuń obecne nagranie", key="del_note_audio"):
-                st.session_state.note_audio_bytes = None
-                st.rerun()
             
-        c1, c2 = st.columns(2)
-        if st.session_state.note_audio_bytes and c1.button(_("Opcjonalnie: Transkrybuj mowę")):
-            with st.spinner(_("Rozpoznawanie mowy...")):
-                transcription = await transcribe_audio(st.session_state.note_audio_bytes)
-                st.session_state.p_state['note_audio_text'] = transcription
+            c1, c2 = st.columns(2)
+            if c1.button("🗑 Usuń nagranie", key="del_note_audio"):
+                st.session_state.note_audio_bytes = None
+                st.session_state.last_processed_audio_bytes = None
+                st.session_state.p_state['note_audio_text'] = ""
+                st.session_state.pop("wid_note_audio_text", None)
+                st.session_state.note_audio_key = f"note_audio_{uuid.uuid4()}"
                 st.rerun()
+                
+            if c2.button(_("Opcjonalnie: Transkrybuj mowę"), key="transcribe_note_audio"):
+                with st.spinner(_("Rozpoznawanie mowy...")):
+                    transcription = await transcribe_audio(st.session_state.note_audio_bytes)
+                    
+                    # MAGIA: Przycisk jest POWYŻEJ pola, więc bezpiecznie "wstrzykujemy" tekst i pomijamy st.rerun(). 
+                    # Kod swobodnie popłynie w dół i narysuje pełne okienko!
+                    st.session_state.p_state['note_audio_text'] = transcription
+                    st.session_state["wid_note_audio_text"] = transcription
                     
         p_text_area(_("Treść notatki tekstowej (lub transkrypcji):"), key="note_audio_text")
         
         if st.button(_("Zapisz Notatkę do bazy"), type="primary"):
-            if not st.session_state.p_state['note_audio_text'] and not st.session_state.note_audio_bytes:
+            if not st.session_state.p_state['note_audio_text'] and not st.session_state.get("note_audio_bytes"):
                 st.warning(_("Notatka jest pusta!"))
             else:
                 with st.spinner(_("Zapisywanie i generowanie wektorów...")):
@@ -943,337 +992,348 @@ async def app_core(current_user):
                         emb = embedder.encode(st.session_state.p_state['note_audio_text']).tolist()
                         emb_json = json.dumps(emb)
                         
-                    n_type = NoteType.AUDIO if st.session_state.note_audio_bytes else NoteType.TEXT
+                    n_type = NoteType.AUDIO if st.session_state.get("note_audio_bytes") else NoteType.TEXT
+                    
                     async with sessionmaker(bind=get_engine(), class_=AsyncSession)() as session:
-                        session.add(Note(user_id=current_user, text=st.session_state.p_state['note_audio_text'], note_type=n_type, audio_data=st.session_state.note_audio_bytes, embedding=emb_json))
+                        session.add(Note(
+                            user_id=current_user, 
+                            text=st.session_state.p_state['note_audio_text'], 
+                            note_type=n_type, 
+                            audio_data=st.session_state.note_audio_bytes, 
+                            embedding=emb_json
+                        ))
                         await session.commit()
                 st.toast(_("Notatka zapisana pomyślnie!"), icon="✅")
                 
+                # MAGIA 2: Przycisk Zapisz jest PONIŻEJ pola, więc tutaj nie wolno użyć "=".
+                # Używamy bezpiecznego usunięcia z pamięci i resetujemy stronę.
                 st.session_state.note_audio_bytes = None
+                st.session_state.last_processed_audio_bytes = None
                 st.session_state.p_state['note_audio_text'] = ""
+                st.session_state.pop("wid_note_audio_text", None)
+                st.session_state.note_audio_key = f"note_audio_{uuid.uuid4()}"
                 st.rerun()
 
     elif current_task == "Powtórki":
-        st.header(_("Twój system nauki (Spaced Repetition)"))
-        
-        f_options = ["study", "add", "edit"]
-        f_labels = [_("Nauka (SM-2)"), _("Dodaj Fiszki"), _("Edytuj / Usuń")]
-        
-        current_f_idx = f_options.index(st.session_state.flashcard_sub_tab)
-        
-        sel_f_label = st.segmented_control(
-            "Nawigacja fiszek", 
-            options=f_labels, 
-            default=f_labels[current_f_idx],
-            selection_mode="single",
-            label_visibility="collapsed"
-        )
-        
-        if sel_f_label is None:
-            st.rerun()
+            st.header(_("Twój system nauki (Spaced Repetition)"))
             
-        new_f_tab = f_options[f_labels.index(sel_f_label)]
-        if new_f_tab != st.session_state.flashcard_sub_tab:
-            st.session_state.flashcard_sub_tab = new_f_tab
-            st.rerun()
+            f_options = ["study", "add", "edit"]
+            f_labels = [_("Nauka (SM-2)"), _("Dodaj Fiszki"), _("Edytuj / Usuń")]
             
-        st.markdown("---")
-        
-        if st.session_state.flashcard_sub_tab == "study":
-            async with sessionmaker(bind=get_engine(), class_=AsyncSession)() as session:
-                now = datetime.now()
-                result = await session.execute(
-                    select(WordRevision).where(WordRevision.user_id == current_user)
-                    .where(WordRevision.next_review_date <= now)
-                    .order_by(WordRevision.next_review_date.asc())
-                )
-                due_flashcards = result.scalars().all()
+            current_f_idx = f_options.index(st.session_state.flashcard_sub_tab)
+            
+            sel_f_label = st.segmented_control(
+                "Nawigacja fiszek", 
+                options=f_labels, 
+                default=f_labels[current_f_idx],
+                selection_mode="single",
+                label_visibility="collapsed"
+            )
+            
+            if sel_f_label is None:
+                st.rerun()
                 
-                if not due_flashcards:
-                    st.success(_("🎉 Gratulacje! Brak słówek na dziś."))
-                else:
-                    st.write(f"**{_('Do powtórzenia')}: {len(due_flashcards)}**")
-                    current_card = due_flashcards[0]
+            new_f_tab = f_options[f_labels.index(sel_f_label)]
+            if new_f_tab != st.session_state.flashcard_sub_tab:
+                st.session_state.flashcard_sub_tab = new_f_tab
+                st.rerun()
+                
+            st.markdown("---")
+            
+            if st.session_state.flashcard_sub_tab == "study":
+                async with sessionmaker(bind=get_engine(), class_=AsyncSession)() as session:
+                    now = datetime.now()
+                    result = await session.execute(
+                        select(WordRevision).where(WordRevision.user_id == current_user)
+                        .where(WordRevision.next_review_date <= now)
+                        .order_by(WordRevision.next_review_date.asc())
+                    )
+                    due_flashcards = result.scalars().all()
                     
-                    with st.container(border=True):
-                        st.title(f"🤔 {current_card.word.upper()}")
-                        st.caption(f"{_('Język')}: {_(current_card.language)} | {_('Baza')}: {current_card.base_form or '-'} | {_('Gramatyka')}: {current_card.grammar_info or '-'}")
+                    if not due_flashcards:
+                        st.success(_("🎉 Gratulacje! Brak słówek na dziś."))
+                    else:
+                        st.write(f"**{_('Do powtórzenia')}: {len(due_flashcards)}**")
+                        current_card = due_flashcards[0]
                         
-                        if current_card.audio_data: st.audio(current_card.audio_data, format="audio/mp3")
+                        with st.container(border=True):
+                            st.title(f"🤔 {current_card.word.upper()}")
+                            st.caption(f"{_('Język')}: {_(current_card.language)} | {_('Baza')}: {current_card.base_form or '-'} | {_('Gramatyka')}: {current_card.grammar_info or '-'}")
+                            
+                            if current_card.audio_data: st.audio(current_card.audio_data, format="audio/mp3")
 
-                        if not st.session_state.show_flashcard_answer:
-                            if st.button(_("Pokaż odpowiedź"), use_container_width=True):
-                                st.session_state.show_flashcard_answer = True
-                                st.rerun()
-                        
-                        if st.session_state.show_flashcard_answer:
-                            st.markdown("---")
-                            st.markdown(f"**{_('Definicje')}:** {current_card.definitions}")
-                            st.markdown(f"**{_('Odmiany')}:** {current_card.inflected_forms}")
-                            st.markdown(f"**{_('Przykłady')}:**")
-                            if current_card.example_sentences:
-                                for s in str(current_card.example_sentences).split(" | "): st.write(f"- {s}")
-                                
-                            if current_card.custom_notes:
-                                st.markdown(f"**{_('Twoje uwagi')}:** {current_card.custom_notes}")
+                            if not st.session_state.show_flashcard_answer:
+                                if st.button(_("Pokaż odpowiedź"), use_container_width=True):
+                                    st.session_state.show_flashcard_answer = True
+                                    st.rerun()
+                            
+                            if st.session_state.show_flashcard_answer:
+                                st.markdown("---")
+                                st.markdown(f"**{_('Definicje')}:** {current_card.definitions}")
+                                st.markdown(f"**{_('Odmiany')}:** {current_card.inflected_forms}")
+                                st.markdown(f"**{_('Przykłady')}:**")
+                                if current_card.example_sentences:
+                                    for s in str(current_card.example_sentences).split(" | "): st.write(f"- {s}")
                                     
-                            st.markdown("---")
-                            col1, col2, col3, col4 = st.columns(4)
-                            grade = None
-                            if col1.button(_("Nie pamiętam"), type="primary"): grade = 0
-                            if col2.button(_("Z trudem")): grade = 3
-                            if col3.button(_("Dobrze")): grade = 4
-                            if col4.button(_("Z łatwością")): grade = 5
-                            
-                            if grade is not None:
-                                new_rep, new_ef, new_int = calculate_sm2(grade, current_card.repetition, current_card.easiness_factor, current_card.interval)
-                                current_card.repetition, current_card.easiness_factor, current_card.interval = new_rep, new_ef, new_int
-                                current_card.next_review_date = datetime.now() + timedelta(days=new_int)
-                                await session.commit()
-                                st.session_state.show_flashcard_answer = False
-                                st.rerun()
+                                if current_card.custom_notes:
+                                    st.markdown(f"**{_('Twoje uwagi')}:** {current_card.custom_notes}")
+                                        
+                                st.markdown("---")
+                                col1, col2, col3, col4 = st.columns(4)
+                                grade = None
+                                if col1.button(_("Nie pamiętam"), type="primary"): grade = 0
+                                if col2.button(_("Z trudem")): grade = 3
+                                if col3.button(_("Dobrze")): grade = 4
+                                if col4.button(_("Z łatwością")): grade = 5
+                                
+                                if grade is not None:
+                                    new_rep, new_ef, new_int = calculate_sm2(grade, current_card.repetition, current_card.easiness_factor, current_card.interval)
+                                    current_card.repetition, current_card.easiness_factor, current_card.interval = new_rep, new_ef, new_int
+                                    current_card.next_review_date = datetime.now() + timedelta(days=new_int)
+                                    await session.commit()
+                                    st.session_state.show_flashcard_answer = False
+                                    st.rerun()
 
-        elif st.session_state.flashcard_sub_tab == "add":
-            st.subheader(_("Kreator z analizą lingwistyczną AI"))
-            
-            p_text_input(_("Wpisz słowo lub wyrażenie:"), key="flashcard_input_word")
-            card_word = st.session_state.p_state['flashcard_input_word']
-            
-            c_lang1, c_lang2 = st.columns(2)
-            with c_lang1:
-                lang_trans = [_(l) for l in SUPPORTED_LANGUAGES]
-                sel_card_lang_trans = st.selectbox(_("Język słowa:"), lang_trans)
-                card_lang = SUPPORTED_LANGUAGES[lang_trans.index(sel_card_lang_trans)]
-            with c_lang2:
-                sel_target_lang_trans = st.selectbox(
-                    _("Język tłumaczenia (definicje):"), 
-                    lang_trans, 
-                    index=SUPPORTED_LANGUAGES.index(st.session_state.translation_target_language)
-                )
-                target_lang = SUPPORTED_LANGUAGES[lang_trans.index(sel_target_lang_trans)]
+            elif st.session_state.flashcard_sub_tab == "add":
+                st.subheader(_("Kreator z analizą lingwistyczną AI"))
                 
-                if target_lang != st.session_state.translation_target_language:
-                    st.session_state.translation_target_language = target_lang
-                    await update_user_preference(current_user, "translation_target_language", target_lang)
-            
-            c1, c2, c3 = st.columns(3)
-            
-            # Pełna lista kluczy formularza do synchronizacji
-            sync_keys = ['fc_base_form', 'fc_grammar_info', 'fc_forms', 'fc_custom_defs', 'fc_custom_sents', 'fc_custom_notes', 'fc_selected_defs', 'fc_selected_sents']
+                p_text_input(_("Wpisz słowo lub wyrażenie:"), key="flashcard_input_word")
+                card_word = st.session_state.p_state['flashcard_input_word']
+                
+                c_lang1, c_lang2 = st.columns(2)
+                with c_lang1:
+                    lang_trans = [_(l) for l in SUPPORTED_LANGUAGES]
+                    sel_card_lang_trans = st.selectbox(_("Język słowa:"), lang_trans)
+                    card_lang = SUPPORTED_LANGUAGES[lang_trans.index(sel_card_lang_trans)]
+                with c_lang2:
+                    sel_target_lang_trans = st.selectbox(
+                        _("Język tłumaczenia (definicje):"), 
+                        lang_trans, 
+                        index=SUPPORTED_LANGUAGES.index(st.session_state.translation_target_language)
+                    )
+                    target_lang = SUPPORTED_LANGUAGES[lang_trans.index(sel_target_lang_trans)]
+                    
+                    if target_lang != st.session_state.translation_target_language:
+                        st.session_state.translation_target_language = target_lang
+                        await update_user_preference(current_user, "translation_target_language", target_lang)
+                
+                c1, c2, c3 = st.columns(3)
+                sync_keys = ['fc_base_form', 'fc_grammar_info', 'fc_forms', 'fc_custom_defs', 'fc_custom_sents', 'fc_custom_notes', 'fc_selected_defs', 'fc_selected_sents']
 
-            # --- 1. PRZYCISK AI ---
-            if c1.button(_("Pobierz dane przez AI")) and card_word:
-                with st.spinner(_("AI analizuje słowo jako API...")):
-                    draft = await generate_word_data(card_word, card_lang, target_lang)
-                    if draft:
-                        # Krok 1: Zapisz to co było na ekranie
-                        for k in sync_keys:
-                            if f"wid_{k}" in st.session_state:
-                                st.session_state.p_state[k] = st.session_state[f"wid_{k}"]
+                if c1.button(_("Pobierz dane przez AI")) and card_word:
+                    with st.spinner(_("AI analizuje słowo jako API...")):
+                        draft = await generate_word_data(card_word, card_lang, target_lang)
+                        if draft:
+                            for k in sync_keys:
+                                if f"wid_{k}" in st.session_state:
+                                    st.session_state.p_state[k] = st.session_state[f"wid_{k}"]
 
-                        st.session_state.current_flashcard_draft = True
-                        
-                        # AI zawsze aktualizuje główną wiedzę gramatyczną
-                        st.session_state.p_state['fc_base_form'] = draft.get('base_form', '')
-                        st.session_state.p_state['fc_grammar_info'] = draft.get('grammar_info', '')
-                        forms = draft.get('forms', [])
-                        st.session_state.p_state['fc_forms'] = ", ".join(forms) if isinstance(forms, list) else forms
-                        st.session_state.fc_def_options = draft.get('definitions', [])
-                        st.session_state.p_state['fc_selected_defs'] = draft.get('definitions', [])
-                        
-                        # ZDANIA - Połączenie AI z tym co już było (np. z Tatoeba)
-                        ai_sents = draft.get('sentences', [])
-                        curr_opts = st.session_state.get('fc_sent_options', [])
-                        curr_sel = st.session_state.p_state.get('fc_selected_sents', [])
-                        
-                        new_sents = [s for s in ai_sents if s not in curr_opts]
-                        st.session_state.fc_sent_options = curr_opts + new_sents
-                        st.session_state.p_state['fc_selected_sents'] = curr_sel + new_sents
-                        
-                        # Krok 3: Zniszcz widgety fizyczne, by wymusić zaciągnięcie nowych wartości
-                        for k in sync_keys:
-                            st.session_state.pop(f"wid_{k}", None)
+                            st.session_state.current_flashcard_draft = True
+                            st.session_state.p_state['fc_base_form'] = draft.get('base_form', '')
+                            st.session_state.p_state['fc_grammar_info'] = draft.get('grammar_info', '')
+                            forms = draft.get('forms', [])
+                            st.session_state.p_state['fc_forms'] = ", ".join(forms) if isinstance(forms, list) else forms
                             
-                        st.rerun()
-
-            # --- 2. PRZYCISK TATOEBA ---
-            if c2.button(_("Pobierz zdania z bazy Tatoeba")) and card_word:
-                with st.spinner(_("Szukam autentycznych przykładów...")):
-                    api_sents = get_example_sentences_api(card_word, card_lang, target_lang)
-                    if api_sents:
-                        # Krok 1: Zapisz absolutnie wszystko z ekranu (żeby nie zniszczyć pracy AI lub Ręcznej)
-                        for k in sync_keys:
-                            if f"wid_{k}" in st.session_state:
-                                st.session_state.p_state[k] = st.session_state[f"wid_{k}"]
-
-                        st.session_state.current_flashcard_draft = True
-                        
-                        # ZDANIA - Połączenie Tatoeba z obecnym stanem
-                        curr_opts = st.session_state.get('fc_sent_options', [])
-                        curr_sel = st.session_state.p_state.get('fc_selected_sents', [])
-                        
-                        new_sents = [s for s in api_sents if s not in curr_opts]
-                        if new_sents:
+                            st.session_state.fc_def_options = draft.get('definitions', [])
+                            st.session_state.p_state['fc_selected_defs'] = draft.get('definitions', [])
+                            
+                            ai_sents = draft.get('sentences', [])
+                            curr_opts = st.session_state.get('fc_sent_options', [])
+                            curr_sel = st.session_state.p_state.get('fc_selected_sents', [])
+                            
+                            new_sents = [s for s in ai_sents if s not in curr_opts]
                             st.session_state.fc_sent_options = curr_opts + new_sents
                             st.session_state.p_state['fc_selected_sents'] = curr_sel + new_sents
-                        
-                        # Krok 3: Zniszcz widgety fizyczne
-                        for k in sync_keys:
-                            st.session_state.pop(f"wid_{k}", None)
                             
-                        st.rerun()
-                    else: 
-                        st.warning(_("API nie znalazło przykładów."))
+                            for k in sync_keys:
+                                st.session_state.pop(f"wid_{k}", None)
+                            st.rerun()
 
-            # --- 3. PRZYCISK RĘCZNY ---
-            if c3.button(_("Wprowadź ręcznie")) and card_word:
-                st.session_state.current_flashcard_draft = True
-                st.session_state.p_state['fc_base_form'] = card_word
-                st.session_state.p_state['fc_grammar_info'] = ""
-                st.session_state.p_state['fc_forms'] = ""
-                st.session_state.fc_def_options = []
-                st.session_state.p_state['fc_selected_defs'] = []
-                st.session_state.fc_sent_options = []
-                st.session_state.p_state['fc_selected_sents'] = []
-                
-                # Zniszcz widgety, wyczyść cały formularz
-                for k in sync_keys:
-                    st.session_state.pop(f"wid_{k}", None)
+                if c2.button(_("Pobierz zdania z bazy Tatoeba")) and card_word:
+                    with st.spinner(_("Szukam autentycznych przykładów...")):
+                        api_sents = get_example_sentences_api(card_word, card_lang, target_lang)
+                        if api_sents:
+                            for k in sync_keys:
+                                if f"wid_{k}" in st.session_state:
+                                    st.session_state.p_state[k] = st.session_state[f"wid_{k}"]
+
+                            st.session_state.current_flashcard_draft = True
+                            curr_opts = st.session_state.get('fc_sent_options', [])
+                            curr_sel = st.session_state.p_state.get('fc_selected_sents', [])
+                            
+                            new_sents = [s for s in api_sents if s not in curr_opts]
+                            if new_sents:
+                                st.session_state.fc_sent_options = curr_opts + new_sents
+                                st.session_state.p_state['fc_selected_sents'] = curr_sel + new_sents
+                            
+                            for k in sync_keys:
+                                st.session_state.pop(f"wid_{k}", None)
+                            st.rerun()
+                        else: 
+                            st.warning(_("API nie znalazło przykładów."))
+
+                if c3.button(_("Wprowadź ręcznie")) and card_word:
+                    st.session_state.current_flashcard_draft = True
                     
-                st.rerun()
-            
-            if st.session_state.current_flashcard_draft:
-                st.markdown("---")
-                
-                p_text_input(_("Forma podstawowa"), key="fc_base_form")
-                p_text_input(_("Info gramatyczne"), key="fc_grammar_info")
-                p_text_input(_("Odmiany"), key="fc_forms")
-                
-                p_multiselect(_("Wybierz definicje do zapisania:"), key="fc_selected_defs", options=st.session_state.fc_def_options)
-                p_text_area(_("Własne definicje (każda w nowej linii - opcjonalnie):"), placeholder=_("np. definicja 1\ndefinicja 2"), key="fc_custom_defs")
-                
-                p_multiselect(_("Wybierz przykłady zdań:"), key="fc_selected_sents", options=st.session_state.fc_sent_options)
-                p_text_area(_("Własne przykłady (każdy w nowej linii - opcjonalnie):"), placeholder=_("np. To jest mój pierwszy przykład.\nA to jest mój drugi przykład."), key="fc_custom_sents")
-                
-                p_text_area(_("Twoje własne uwagi (opcjonalnie):"), key="fc_custom_notes")
-
-                st.write(f"**{_('Audio (opcjonalnie):')}**")
-                a_col1, a_col2 = st.columns(2)
-                with a_col1:
-                    if st.button(_("Generuj wymowę (TTS)")):
-                        with st.spinner(_("Generowanie...")):
-                            tts_lang_code = TTS_LANG_MAP.get(card_lang, "en")
-                            try:
-                                tts = gTTS(text=card_word, lang=tts_lang_code)
-                                buf = io.BytesIO()
-                                tts.write_to_fp(buf)
-                                st.session_state.flashcard_audio_bytes = buf.getvalue()
-                            except Exception as e:
-                                st.error(f"{_('Błąd TTS')}: {e}")
-                
-                with a_col2:
-                    mic_audio = st.audio_input(_("🎤 Nagraj wymowę"))
-                    if mic_audio: st.session_state.flashcard_audio_bytes = mic_audio.getvalue()
-                
-                if st.session_state.flashcard_audio_bytes:
-                    st.success("Plik audio powiązany z fiszką:")
-                    st.audio(st.session_state.flashcard_audio_bytes, format="audio/mp3")
-                    if st.button("🗑 Usuń przypisane audio", key="del_fc_audio"):
-                        st.session_state.flashcard_audio_bytes = None
-                        st.rerun()
-                
-                if st.button(_("Zapisz gotową fiszkę"), type="primary"):
-                    final_defs = st.session_state.p_state['fc_selected_defs'].copy()
-                    for line in st.session_state.p_state['fc_custom_defs'].split('\n'):
-                        if line.strip(): final_defs.append(line.strip())
-                            
-                    final_sents = st.session_state.p_state['fc_selected_sents'].copy()
-                    for line in st.session_state.p_state['fc_custom_sents'].split('\n'):
-                        if line.strip(): final_sents.append(line.strip())
-
-                    async with sessionmaker(bind=get_engine(), class_=AsyncSession)() as session:
-                        new_rev = WordRevision(
-                            user_id=current_user, word=card_word, language=card_lang, base_form=st.session_state.p_state['fc_base_form'],
-                            grammar_info=st.session_state.p_state['fc_grammar_info'], definitions=" | ".join(final_defs), inflected_forms=st.session_state.p_state['fc_forms'],
-                            example_sentences=" | ".join(final_sents), custom_notes=st.session_state.p_state['fc_custom_notes'],
-                            audio_data=st.session_state.flashcard_audio_bytes
-                        )
-                        session.add(new_rev)
-                        await session.commit()
-                        
-                    st.success(_("Fiszka dodana pomyślnie!"))
-                    st.session_state.current_flashcard_draft = False
-                    st.session_state.flashcard_audio_bytes = None
-                    
-                    # --- W PEŁNI DZIAŁAJĄCE CZYSZCZENIE STANU WIDGETÓW I SŁOWNIKA ---
-                    keys_to_clear = ['flashcard_input_word', 'fc_base_form', 'fc_grammar_info', 'fc_forms', 'fc_custom_defs', 'fc_custom_sents', 'fc_custom_notes']
-                    for k in keys_to_clear: 
-                        st.session_state.p_state[k] = ""
-                        if f"wid_{k}" in st.session_state:
-                            del st.session_state[f"wid_{k}"]
-                            
-                    for k in ['fc_selected_defs', 'fc_selected_sents']: 
-                        st.session_state.p_state[k] = []
-                        if f"wid_{k}" in st.session_state:
-                            del st.session_state[f"wid_{k}"]
-                            
+                    st.session_state.p_state['fc_base_form'] = card_word
+                    st.session_state.p_state['fc_grammar_info'] = ""
+                    st.session_state.p_state['fc_forms'] = ""
                     st.session_state.fc_def_options = []
+                    st.session_state.p_state['fc_selected_defs'] = []
                     st.session_state.fc_sent_options = []
-                        
-                    time.sleep(1)
+                    st.session_state.p_state['fc_selected_sents'] = []
+                    
+                    for k in sync_keys:
+                        st.session_state.pop(f"wid_{k}", None)
                     st.rerun()
+                
+                if st.session_state.current_flashcard_draft:
+                    st.markdown("---")
+                    
+                    p_text_input(_("Forma podstawowa"), key="fc_base_form")
+                    p_text_input(_("Info gramatyczne"), key="fc_grammar_info")
+                    p_text_input(_("Odmiany"), key="fc_forms")
+                    
+                    p_multiselect(_("Wybierz definicje do zapisania:"), key="fc_selected_defs", options=st.session_state.fc_def_options)
+                    p_text_area(_("Własne definicje (każda w nowej linii - opcjonalnie):"), placeholder=_("np. definicja 1\ndefinicja 2"), key="fc_custom_defs")
+                    
+                    p_multiselect(_("Wybierz przykłady zdań:"), key="fc_selected_sents", options=st.session_state.fc_sent_options)
+                    p_text_area(_("Własne przykłady (każdy w nowej linii - opcjonalnie):"), placeholder=_("np. To jest mój pierwszy przykład.\nA to jest mój drugi przykład."), key="fc_custom_sents")
+                    
+                    p_text_area(_("Twoje własne uwagi (opcjonalnie):"), key="fc_custom_notes")
 
-        elif st.session_state.flashcard_sub_tab == "edit":
-            search_query = p_text_input("🔍 " + _("Szukaj fiszki:"), key="search_flashcards")
-            
-            async with sessionmaker(bind=get_engine(), class_=AsyncSession)() as session:
-                res = await session.execute(
-                    select(WordRevision).where(WordRevision.user_id == current_user).order_by(WordRevision.creation_date.desc())
-                )
-                all_cards = res.scalars().all()
-                
-                if search_query:
-                    q_lower = search_query.lower()
-                    all_cards = [
-                        c for c in all_cards 
-                        if q_lower in c.word.lower() 
-                        or (c.definitions and q_lower in c.definitions.lower())
-                        or (c.base_form and q_lower in c.base_form.lower())
-                    ]
-                
-                if not all_cards: st.info(_("Brak historii aktywności."))
-                
-                for c in all_cards:
-                    with st.expander(f"{c.word} ({_(c.language)}) - {_('Następna')}: {c.next_review_date.strftime('%Y-%m-%d')}"):
-                        with st.form(key=f"edit_form_{c.id}"):
-                            edit_word = st.text_input(_("Słowo"), value=c.word)
-                            edit_base = st.text_input(_("Forma podstawowa"), value=c.base_form or "")
-                            edit_grammar = st.text_input(_("Info gramatyczne"), value=c.grammar_info or "")
-                            edit_defs = st.text_area(_("Definicje"), value=c.definitions or "")
-                            edit_forms = st.text_area(_("Odmiany"), value=c.inflected_forms or "")
-                            edit_sents = st.text_area(_("Przykłady"), value=c.example_sentences or "")
-                            edit_notes = st.text_area(_("Twoje uwagi"), value=c.custom_notes or "")
+                    st.write(f"**{_('Audio (opcjonalnie):')}**")
+                    a_col1, a_col2 = st.columns(2)
+                    with a_col1:
+                        if st.button(_("Generuj wymowę (TTS)")):
+                            with st.spinner(_("Generowanie...")):
+                                tts_lang_code = TTS_LANG_MAP.get(card_lang, "en")
+                                try:
+                                    tts = gTTS(text=card_word, lang=tts_lang_code)
+                                    buf = io.BytesIO()
+                                    tts.write_to_fp(buf)
+                                    st.session_state.flashcard_audio_bytes = buf.getvalue()
+                                except Exception as e:
+                                    st.error(f"{_('Błąd TTS')}: {e}")
+                    
+                    with a_col2:
+                        # --- ROZWIĄZANIE OSTATECZNE DLA FISZEK: Dynamiczny klucz widgetu ---
+                        if "fc_audio_key" not in st.session_state:
+                            st.session_state.fc_audio_key = f"fc_audio_{uuid.uuid4()}"
                             
-                            delete_audio = False
-                            if c.audio_data:
-                                st.audio(c.audio_data, format="audio/mp3")
-                                delete_audio = st.checkbox(_("Usuń przypisane audio"), key=f"del_aud_{c.id}")
-
-                            col1, col2 = st.columns(2)
-                            submitted = col1.form_submit_button(_("💾 Zapisz zmiany"))
-                            deleted = col2.form_submit_button(_("🗑 Usuń fiszkę"))
-                            
-                            if submitted:
-                                c.word = edit_word; c.base_form = edit_base; c.grammar_info = edit_grammar; c.definitions = edit_defs
-                                c.inflected_forms = edit_forms; c.example_sentences = edit_sents; c.custom_notes = edit_notes
-                                if delete_audio: c.audio_data = None
-                                await session.commit()
-                                st.rerun()
+                        mic_audio = st.audio_input(_("🎤 Nagraj wymowę"), key=st.session_state.fc_audio_key)
+                        
+                        fc_current_bytes = mic_audio.getvalue() if mic_audio else None
+                        if fc_current_bytes and fc_current_bytes != st.session_state.get("last_fc_audio_bytes"):
+                            st.session_state.last_fc_audio_bytes = fc_current_bytes
+                            st.session_state.flashcard_audio_bytes = fc_current_bytes
+                            st.rerun()
+                    
+                    if st.session_state.flashcard_audio_bytes:
+                        st.success("Plik audio powiązany z fiszką:")
+                        st.audio(st.session_state.flashcard_audio_bytes, format="audio/mp3")
+                        if st.button("🗑 Usuń przypisane audio", key="del_fc_audio"):
+                            st.session_state.flashcard_audio_bytes = None
+                            st.session_state.last_fc_audio_bytes = None
+                            # Wymuszenie usunięcia nagrania w widget
+                            st.session_state.fc_audio_key = f"fc_audio_{uuid.uuid4()}"
+                            st.rerun()
+                    
+                    if st.button(_("Zapisz gotową fiszkę"), type="primary"):
+                        final_defs = st.session_state.p_state['fc_selected_defs'].copy()
+                        for line in st.session_state.p_state['fc_custom_defs'].split('\n'):
+                            if line.strip(): final_defs.append(line.strip())
                                 
-                            if deleted:
-                                await session.delete(c)
-                                await session.commit()
-                                st.rerun()
+                        final_sents = st.session_state.p_state['fc_selected_sents'].copy()
+                        for line in st.session_state.p_state['fc_custom_sents'].split('\n'):
+                            if line.strip(): final_sents.append(line.strip())
+
+                        async with sessionmaker(bind=get_engine(), class_=AsyncSession)() as session:
+                            new_rev = WordRevision(
+                                user_id=current_user, word=card_word, language=card_lang, base_form=st.session_state.p_state['fc_base_form'],
+                                grammar_info=st.session_state.p_state['fc_grammar_info'], definitions=" | ".join(final_defs), inflected_forms=st.session_state.p_state['fc_forms'],
+                                example_sentences=" | ".join(final_sents), custom_notes=st.session_state.p_state['fc_custom_notes'],
+                                audio_data=st.session_state.flashcard_audio_bytes
+                            )
+                            session.add(new_rev)
+                            await session.commit()
+                            
+                        st.success(_("Fiszka dodana pomyślnie!"))
+                        st.session_state.current_flashcard_draft = False
+                        st.session_state.flashcard_audio_bytes = None
+                        st.session_state.last_fc_audio_bytes = None
+                        
+                        # Wyczyść stary widget po dodaniu fiszki
+                        st.session_state.fc_audio_key = f"fc_audio_{uuid.uuid4()}"
+                        
+                        keys_to_clear = ['flashcard_input_word', 'fc_base_form', 'fc_grammar_info', 'fc_forms', 'fc_custom_defs', 'fc_custom_sents', 'fc_custom_notes']
+                        for k in keys_to_clear: 
+                            st.session_state.p_state[k] = ""
+                            if f"wid_{k}" in st.session_state:
+                                del st.session_state[f"wid_{k}"]
+                                
+                        for k in ['fc_selected_defs', 'fc_selected_sents']: 
+                            st.session_state.p_state[k] = []
+                            if f"wid_{k}" in st.session_state:
+                                del st.session_state[f"wid_{k}"]
+                                
+                        st.session_state.fc_def_options = []
+                        st.session_state.fc_sent_options = []
+                            
+                        time.sleep(0.5)
+                        st.rerun()
+
+            elif st.session_state.flashcard_sub_tab == "edit":
+                search_query = p_text_input("🔍 " + _("Szukaj fiszki:"), key="search_flashcards")
+                
+                async with sessionmaker(bind=get_engine(), class_=AsyncSession)() as session:
+                    res = await session.execute(
+                        select(WordRevision).where(WordRevision.user_id == current_user).order_by(WordRevision.creation_date.desc())
+                    )
+                    all_cards = res.scalars().all()
+                    
+                    if search_query:
+                        q_lower = search_query.lower()
+                        all_cards = [
+                            c for c in all_cards 
+                            if q_lower in c.word.lower() 
+                            or (c.definitions and q_lower in c.definitions.lower())
+                            or (c.base_form and q_lower in c.base_form.lower())
+                        ]
+                    
+                    if not all_cards: st.info(_("Brak historii aktywności."))
+                    
+                    for c in all_cards:
+                        with st.expander(f"{c.word} ({_(c.language)}) - {_('Następna')}: {c.next_review_date.strftime('%Y-%m-%d')}"):
+                            with st.form(key=f"edit_form_{c.id}"):
+                                edit_word = st.text_input(_("Słowo"), value=c.word)
+                                edit_base = st.text_input(_("Forma podstawowa"), value=c.base_form or "")
+                                edit_grammar = st.text_input(_("Info gramatyczne"), value=c.grammar_info or "")
+                                edit_defs = st.text_area(_("Definicje"), value=c.definitions or "")
+                                edit_forms = st.text_area(_("Odmiany"), value=c.inflected_forms or "")
+                                edit_sents = st.text_area(_("Przykłady"), value=c.example_sentences or "")
+                                edit_notes = st.text_area(_("Twoje uwagi"), value=c.custom_notes or "")
+                                
+                                delete_audio = False
+                                if c.audio_data:
+                                    st.audio(c.audio_data, format="audio/mp3")
+                                    delete_audio = st.checkbox(_("Usuń przypisane audio"), key=f"del_aud_{c.id}")
+
+                                col1, col2 = st.columns(2)
+                                submitted = col1.form_submit_button(_("💾 Zapisz zmiany"))
+                                deleted = col2.form_submit_button(_("🗑 Usuń fiszkę"))
+                                
+                                if submitted:
+                                    c.word = edit_word; c.base_form = edit_base; c.grammar_info = edit_grammar; c.definitions = edit_defs
+                                    c.inflected_forms = edit_forms; c.example_sentences = edit_sents; c.custom_notes = edit_notes
+                                    if delete_audio: c.audio_data = None
+                                    await session.commit()
+                                    st.rerun()
+                                    
+                                if deleted:
+                                    await session.delete(c)
+                                    await session.commit()
+                                    st.rerun()
 
     elif current_task == "Historia i Zapisane":
         st.header(_("Centrum Danych i Historii"))
@@ -1302,17 +1362,25 @@ async def app_core(current_user):
                 notes = res.scalars().all()
                 
                 if q and SEMANTIC_SEARCH_AVAILABLE:
-                    q_emb = embedder.encode(q).tolist()
+                    # Generujemy wektor zapytania jako numpy array
+                    q_emb = embedder.encode(q)
                     scored_notes = []
+                    
                     for n in notes:
                         if n.embedding:
                             try:
-                                n_emb = json.loads(n.embedding)
+                                # Odczytujemy JSON i od razu konwertujemy na wektor matematyczny
+                                n_emb = np.array(json.loads(n.embedding))
                                 score = cosine_similarity(q_emb, n_emb)
                                 scored_notes.append((score, n))
                             except: pass
+                            
+                    # Sortujemy od najbardziej trafnych
                     scored_notes.sort(key=lambda x: x[0], reverse=True)
-                    notes_to_display = [n for score, n in scored_notes if score > 0.1] 
+                    
+                    # --- KLUCZOWA POPRAWKA: Próg zmieniony z 0.1 na 0.35 ---
+                    # Poniżej 0.35 to najczęściej przypadkowe powiązania słów
+                    notes_to_display = [n for score, n in scored_notes if score > 0.35]
                 elif q: notes_to_display = [n for n in notes if n.text and q.lower() in n.text.lower()]
                 else: notes_to_display = notes
                 
@@ -1454,13 +1522,46 @@ for lang, translations in WELCOME_SCREEN_TRANSLATIONS.items():
         STATIC_TRANSLATIONS[lang] = {}
     STATIC_TRANSLATIONS[lang].update(translations)
 
+# ==========================================
+# FUNKCJA MAIN Z BEZPIECZNĄ OBSŁUGĄ COOKIES I OAUTH
+# ==========================================
+import streamlit as st
+import requests
+import asyncio
+import time
 
-# ==========================================
-# FUNKCJA MAIN Z NOWYM EKRANEM POWITALNYM
-# ==========================================
 def main():
     st.set_page_config(page_title=_("Lingilo - Twój pomocnik językowy"), layout="wide")
-    
+
+    # Inicjalizacja licznika prób dla ciasteczek
+    if "cookie_loop_count" not in st.session_state:
+        st.session_state.cookie_loop_count = 0
+
+    # Inicjalizacja menedżera ciasteczek z unikalnym kluczem globalnym
+    cookie_manager = stx.CookieManager(key="lingilo_global_cookie_manager")
+
+    # Sprawdzamy, czy Auth0 właśnie nas odesłało z kodem w adresie URL (?code=...)
+    is_auth0_callback = "code" in st.query_params
+
+    # ODZYSKIWANIE SESJI (Obsługa F5 / Odświeżenia strony)
+    if "token" not in st.session_state and not is_auth0_callback and st.session_state.cookie_loop_count < 2:
+        try:
+            # Krótkie uśpienie w tle, aby dać czas komponentowi iframe na pobranie ciasteczek z przeglądarki
+            time.sleep(0.2) 
+            saved_token = cookie_manager.get(cookie="auth0_token")
+            
+            # Logujemy automatycznie tylko, jeśli token istnieje i nie jest pustym ciągiem
+            if saved_token and str(saved_token).strip() != "" and saved_token != "None":
+                st.session_state.token = {"access_token": saved_token}
+                st.session_state.cookie_loop_count = 0  # Reset licznika sukcesu
+                st.rerun()
+        except Exception:
+            pass  
+        
+        st.session_state.cookie_loop_count += 1
+        st.rerun()
+
+    # EKRAN POWITALNY I LOGOWANIE (Gdy brak tokenu w sesji)
     if "token" not in st.session_state:
         st.title("🌍 Lingilo")
         st.subheader(_("Twój Osobisty Asystent Językowy AI"))
@@ -1498,34 +1599,68 @@ def main():
 
         st.markdown("<br>", unsafe_allow_html=True) 
         
+        # Przycisk logowania Auth0
         result = oauth2.authorize_button(
             name=_("Zaloguj przez Auth0"),
-            icon="https://auth0.com/favicon.ico",
+            icon="https://auth0.com",
             redirect_uri=REDIRECT_URI,  
             scope="openid email profile"
         )
         
         if result and "token" in result:
-            st.session_state.token = result.get("token")
+            token_data = result.get("token")
+            st.session_state.token = token_data
+            
+            # ZAPIS DO CIASTECZKA (Wartość przetrwa restart i odświeżenie F5)
+            access_tok = token_data.get("access_token") if isinstance(token_data, dict) else token_data
+            try:
+                cookie_manager.set("auth0_token", access_tok, key="set_cookie_on_login_success")
+                time.sleep(0.15)  # Czas dla przeglądarki na fizyczny zapis
+            except Exception:
+                pass
+            st.session_state.cookie_loop_count = 0
             st.rerun()
             
-        st.stop()  
-        
+        return
+
+    # GŁÓWNA APLIKACJA PO ZALOGOWANIU
     token_data = st.session_state.token
+    access_token_str = token_data.get("access_token") if isinstance(token_data, dict) else token_data
+
     if "user_info" not in st.session_state:
         try:
-            headers = {"Authorization": f"Bearer {token_data['access_token']}"}
+            headers = {"Authorization": f"Bearer {access_token_str}"}
             response = requests.get(f"https://{AUTH0_DOMAIN}/userinfo", headers=headers)
             response.raise_for_status()
             st.session_state.user_info = response.json()
         except Exception as e:
-            st.error(f"{_('Błąd komunikacji z Auth0')}: {e}")
-            st.stop()
+            st.warning("Sesja Auth0 wygasła lub wystąpił błąd. Trwa wylogowywanie...")
+            try:
+                cookie_manager.set("auth0_token", "", key="clear_cookie_on_session_expired")
+                time.sleep(0.15)
+            except Exception:
+                pass
             
-    current_user = st.session_state.user_info.get("sub", "default_user")
-    st.session_state.current_user_id = current_user
+            if "token" in st.session_state:
+                del st.session_state.token
+            if "user_info" in st.session_state:
+                del st.session_state.user_info
+            st.session_state.cookie_loop_count = 99
+            time.sleep(1.5)
+            st.rerun()
 
-    asyncio.run(app_core(current_user))
+    if "user_info" in st.session_state:
+        current_user = st.session_state.user_info.get("sub", "default_user")
+        st.session_state.current_user_id = current_user
+
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+        # Przekazujemy sprawny obiekt cookie_manager do app_core
+        loop.run_until_complete(app_core(current_user, cookie_manager))
 
 if __name__ == "__main__":
     main()
