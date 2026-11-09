@@ -705,25 +705,25 @@ async def transcribe_audio(audio_bytes):
 # ==========================================
 async def app_core(current_user, cookie_manager):
 
-    # 1. Definiujemy funkcję, która wykona się DOKŁADNIE w momencie kliknięcia (na poziomie przeglądarki)
+    # CALLBACK: Wywołuje się NATYCHMIAST po kliknięciu Wyloguj, przed ponownym renderowaniem aplikacji
     def process_logout():
         try:
-            # Nadpisujemy ciasteczko pustą wartością (wyszyszczenie)
+            # Próbujemy natychmiastowo wyczyścić ciasteczko w przeglądarce
             cookie_manager.set("auth0_token", "", key="clear_cookie_on_manual_logout")
         except Exception:
             pass
 
-        # Czyszczenie stanu sesji Pythona
-        if "token" in st.session_state:
-            del st.session_state.token
-        if "user_info" in st.session_state:
-            del st.session_state.user_info
+        # Czyścimy dane z sesji Streamlita, żeby zablokować dostęp do aplikacji
+        st.session_state.pop("token", None)
+        st.session_state.pop("user_info", None)
             
         st.session_state.prefs_loaded = False
-        # Ustalamy wysoki licznik prób, aby main() nie szukał starego ciasteczka po przeładowaniu
         st.session_state.cookie_loop_count = 99  
         st.query_params.clear()
-    
+        
+        # BLOKADA "ZOMBIE COOKIE" - chroni przed starym ciastkiem, jeśli przeglądarka odświeży je za późno
+        st.session_state.logged_out_flag = True
+
     if "db_initialized" not in st.session_state:
         await create_tables()
         st.session_state.db_initialized = True
@@ -746,21 +746,15 @@ async def app_core(current_user, cookie_manager):
     with st.sidebar:
         st.success("✅ " + _("Zalogowano pomyślnie"))
         
-        if st.button(_("Wyloguj")):
-            # 1. Bezpieczny zapis draftów
+        # PRZYCISK WYLOGUJ Z CALLBACKIEM
+        if st.button(_("Wyloguj"), on_click=process_logout):
+            # Tu robimy tylko bezpieczny zapis draftów asynchronicznie i wymuszamy twardy reset UI
             drafts_to_save = st.session_state.p_state.copy()
             current_drafts_json = json.dumps(drafts_to_save)
             if current_drafts_json != st.session_state.get('last_saved_drafts'):
                 await update_user_preference(current_user, "session_drafts", current_drafts_json)
                 st.session_state.last_saved_drafts = current_drafts_json
             
-            # 2. Usuwamy dane sesji i aktywujemy flagę blokującą "zombie cookie"
-            st.session_state.pop("token", None)
-            st.session_state.pop("user_info", None)
-            st.session_state.prefs_loaded = False
-            st.session_state.force_logout = True
-            
-            # 3. Odświeżamy - skrypt poleci do main(), by usunąć ciastko z przeglądarki
             st.rerun()
             
         st.header("⚙️ " + _("Ustawienia"))
@@ -1531,50 +1525,40 @@ import asyncio
 import time
 
 # ==========================================
-# FUNKCJA MAIN Z BLOKADĄ ZOMBIE COOKIE
+# FUNKCJA MAIN Z TRWAŁĄ BLOKADĄ ZOMBIE COOKIE
+# ==========================================
+# ==========================================
+# FUNKCJA MAIN (Z TWOIM DZIAŁAJĄCYM CZEKANIEM NA CIASTECZKA)
 # ==========================================
 def main():
     st.set_page_config(page_title=_("Lingilo - Twój pomocnik językowy"), layout="wide")
 
-    # Inicjalizacja licznika odzyskiwania ciasteczek po F5
     if "cookie_loop_count" not in st.session_state:
         st.session_state.cookie_loop_count = 0
 
     cookie_manager = stx.CookieManager(key="lingilo_global_cookie_manager")
-
-    # 1. OBSŁUGA WYLOGOWANIA (Przechwycenie sygnału z bocznego paska)
-    if st.session_state.get("force_logout"):
-        # Wysyłamy polecenie usunięcia ciasteczka do przeglądarki
-        cookie_manager.delete("auth0_token", key="delete_auth0_cookie")
-        st.session_state.force_logout = False
-        # Ustawiamy flagę oznaczającą, że w tym jednym cyklu ignorujemy resztki ciasteczka ("zombie cookie")
-        st.session_state.skip_auto_login = True 
-        st.query_params.clear()
-
     is_auth0_callback = "code" in st.query_params
 
-    # 2. ODZYSKIWANIE SESJI (F5) i AUTOMATYCZNE LOGOWANIE
+    # ODZYSKIWANIE SESJI (Obsługa F5 / Odświeżenia strony)
     if "token" not in st.session_state and not is_auth0_callback and st.session_state.cookie_loop_count < 2:
-        try:
-            # Krótka pauza, by iframe odczytał ciastka z przeglądarki po restarcie Pythona
-            time.sleep(0.2) 
-            saved_token = cookie_manager.get(cookie="auth0_token")
-            
-            # Jeśli nie wylogowaliśmy się właśnie przed sekundą i znaleźliśmy ciastko - wchodzimy
-            if not st.session_state.get("skip_auto_login"):
+        # Pytamy Python, czy przed chwilą nie wylogowaliśmy się ręcznie
+        if not st.session_state.get("logged_out_flag"):
+            try:
+                time.sleep(0.2) 
+                saved_token = cookie_manager.get(cookie="auth0_token")
+                
                 if saved_token and str(saved_token).strip() != "" and saved_token != "None":
                     st.session_state.token = {"access_token": saved_token}
                     st.session_state.cookie_loop_count = 0  
                     st.rerun()
-        except Exception:
-            pass  
-        
-        st.session_state.cookie_loop_count += 1
-        st.rerun()
-
-    # Zdejmujemy blokadę, żeby po kolejnym F5 auto-logowanie działało poprawnie
-    if st.session_state.get("skip_auto_login"):
-        st.session_state.skip_auto_login = False
+            except Exception:
+                pass  
+            
+            st.session_state.cookie_loop_count += 1
+            st.rerun()
+        else:
+            # Jeśli wylogowaliśmy się ręcznie, ignorujemy sprawdzanie ciastek
+            st.session_state.cookie_loop_count = 99
 
     # --- EKRAN POWITALNY I LOGOWANIE ---
     if "token" not in st.session_state:
@@ -1616,7 +1600,7 @@ def main():
         
         result = oauth2.authorize_button(
             name=_("Zaloguj przez Auth0"),
-            icon="https://auth0.com/favicon.ico",
+            icon="https://auth0.com",
             redirect_uri=REDIRECT_URI,  
             scope="openid email profile"
         )
@@ -1625,9 +1609,11 @@ def main():
             token_data = result.get("token")
             st.session_state.token = token_data
             
+            # --- Zdejmujemy flagę, bo użytkownik się właśnie zalogował! ---
+            st.session_state.logged_out_flag = False
+            
             access_tok = token_data.get("access_token") if isinstance(token_data, dict) else token_data
             try:
-                # Zapisujemy ciasteczko przy logowaniu, by przetrwało odświeżanie F5
                 cookie_manager.set("auth0_token", access_tok, key="set_cookie_on_login_success")
                 time.sleep(0.15) 
             except Exception:
@@ -1650,7 +1636,7 @@ def main():
         except Exception as e:
             st.warning("Sesja Auth0 wygasła lub wystąpił błąd. Trwa wylogowywanie...")
             try:
-                cookie_manager.delete("auth0_token", key="clear_cookie_on_session_expired")
+                cookie_manager.set("auth0_token", "", key="clear_cookie_on_session_expired")
                 time.sleep(0.15)
             except Exception:
                 pass
@@ -1659,7 +1645,9 @@ def main():
                 del st.session_state.token
             if "user_info" in st.session_state:
                 del st.session_state.user_info
+                
             st.session_state.cookie_loop_count = 99
+            st.session_state.logged_out_flag = True
             time.sleep(1.5)
             st.rerun()
 
@@ -1667,8 +1655,7 @@ def main():
         current_user = st.session_state.user_info.get("sub", "default_user")
         st.session_state.current_user_id = current_user
 
-        # Używamy bezpiecznego asyncio.run(), co naprawia błąd deploymentu:
-        # "RuntimeError: This event loop is already running"
+        # BEZPIECZNE WYWOŁANIE PĘTLI NA SERWERZE
         asyncio.run(app_core(current_user, cookie_manager))
 
 if __name__ == "__main__":
