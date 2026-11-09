@@ -1554,13 +1554,17 @@ def get_all_cookies_secure(cookie_manager):
     return {}  # Zwróć pusty słownik, jeśli po 1.5s nic nie przyszło
 
 # ==========================================
-# W PEŁNI STABILNA FUNKCJA MAIN (PRZYCISK NIGDY NIE ZNIKA)
+# OSTATECZNA, PANCIERNA FUNKCJA MAIN DLA STREAMLIT CLOUD
 # ==========================================
 def main():
     st.set_page_config(page_title=_("Lingilo - Twój pomocnik językowy"), layout="wide")
 
     if "logged_out_flag" not in st.session_state:
         st.session_state.logged_out_flag = False
+        
+    # Licznik prób odczytu ciasteczek (odporność na latencję AWS)
+    if "cookie_attempts" not in st.session_state:
+        st.session_state.cookie_attempts = 0
 
     # Kontrola widoku jądra aplikacji
     show_main_app = False
@@ -1570,20 +1574,30 @@ def main():
         show_main_app = True
         cookie_manager = stx.CookieManager(key="lingilo_global_cookie_manager")
     else:
-        # Inicjalizacja komponentu ciasteczek bezpośrednio w kodzie głównym (naprawa F5)
+        # Inicjalizacja komponentu bezpośrednio w kodzie głównym (klucz do naprawy F5)
         cookie_manager = stx.CookieManager(key="lingilo_global_cookie_manager")
         is_auth0_callback = "code" in st.query_params
 
-        # ASYNCHRONICZNE ODCZYTYWANIE SESJI (Bez przerywania skryptu i bez wymuszania st.rerun)
+        # --- BEZPIECZNE, AUTOMATYCZNE ODZYSKIWANIE SESJI (F5) ---
         if not is_auth0_callback and not st.session_state.get("logged_out_flag"):
             all_cookies = cookie_manager.get_all()
-            if all_cookies is not None:
+            
+            if all_cookies is None:
+                # Jeśli chmura jeszcze ładuje komponent JS, dajemy jej szansę przez kontrolowany rerun.
+                # Ograniczamy do 6 prób, co zapobiega nieskończonej pętli, ale pozwala odzyskać sesję.
+                if st.session_state.cookie_attempts < 6:
+                    st.session_state.cookie_attempts += 1
+                    time.sleep(0.15)  # Krótkie uśpienie, by dać czas dla skryptu JS
+                    st.rerun()
+            else:
+                # Ciasteczka wróciły pomyślnie z przeglądarki! Zerujemy licznik prób.
+                st.session_state.cookie_attempts = 0
                 saved_token = all_cookies.get("auth0_token")
                 if saved_token and str(saved_token).strip() != "" and saved_token != "None":
                     st.session_state.token = {"access_token": saved_token}
                     st.rerun()
 
-        # RENDERUJEMY EKRAN POWITALNY (Zawsze obecny na ekranie, bez placeholderów i ukrywania)
+        # RENDERUJEMY EKRAN POWITALNY (Na stałe w drzewie kodu - dzięki temu przycisk NIGDY nie zniknie)
         st.title("🌍 Lingilo")
         st.subheader(_("Twój Osobisty Asystent Językowy AI"))
         
@@ -1632,6 +1646,7 @@ def main():
             token_data = result.get("token")
             st.session_state.token = token_data
             st.session_state.logged_out_flag = False
+            st.session_state.cookie_attempts = 0
             
             access_tok = token_data.get("access_token") if isinstance(token_data, dict) else token_data
             try:
@@ -1652,6 +1667,7 @@ def main():
         st.session_state.pop("user_info", None)
         st.session_state.force_logout = False
         st.session_state.logged_out_flag = True
+        st.session_state.cookie_attempts = 0
         st.query_params.clear()
         st.rerun()
 
@@ -1677,6 +1693,7 @@ def main():
                 st.session_state.pop("token", None)
                 st.session_state.pop("user_info", None)
                 st.session_state.logged_out_flag = True 
+                st.session_state.cookie_attempts = 0
                 time.sleep(1.0)
                 st.query_params.clear()
                 st.rerun()
@@ -1691,6 +1708,8 @@ def main():
                 loop.run_until_complete(app_core(current_user, cookie_manager))
             finally:
                 loop.close()
+
+
 
 if __name__ == "__main__":
     main()
