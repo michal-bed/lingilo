@@ -1555,7 +1555,7 @@ def get_all_cookies_secure(cookie_manager):
     return {}  # Zwróć pusty słownik, jeśli po 1.5s nic nie przyszło
 
 # ==========================================
-# OFICJALNY, WBUDOWANY STANDARD MAIN (ST.CONTEXT)
+# OSTATECZNA, PANCIERNA FUNKCJA MAIN DLA STREAMLIT CLOUD
 # ==========================================
 def main():
     st.set_page_config(page_title=_("Lingilo - Twój pomocnik językowy"), layout="wide")
@@ -1565,24 +1565,31 @@ def main():
 
     is_auth0_callback = "code" in st.query_params
 
-    # --- NATYWNE I BŁYSKAWICZNE ODZYSKIWANIE SESJI (Działa lokalnie i w chmurze) ---
+    # --- NIEBLOKUJĄCE OTRZYMYWANIE SESJI (F5) ---
     if "token" not in st.session_state and not is_auth0_callback:
         if not st.session_state.get("logged_out_flag"):
             try:
-                # Oficjalne pobranie ciasteczek za pomocą wbudowanego interfejsu Streamlit
-                saved_token = st.context.cookies.get("auth0_token")
+                # 1. Próba A: Odczyt z paska adresu URL (Pewniak na Streamlit Cloud po F5)
+                url_token = st.query_params.get("session_token")
+                if url_token and str(url_token).strip() != "" and url_token != "None":
+                    st.session_state.token = {"access_token": url_token}
+                    st.rerun()
                 
+                # 2. Próba B: Fallback na wbudowane ciasteczka (Dla pierwszego wejścia)
+                saved_token = st.context.cookies.get("auth0_token")
                 if saved_token and str(saved_token).strip() != "" and saved_token != "None":
                     st.session_state.token = {"access_token": saved_token}
+                    # Synchronizujemy pasek adresu, aby zabezpieczyć kolejne F5
+                    st.query_params["session_token"] = saved_token
                     st.rerun()
             except Exception:
                 pass
 
-    # --- KONTROLA WIDOKU ---
+    # --- KONTROLA WIDOKU (Gwarancja stabilności przycisku) ---
     show_main_app = False
 
     if "token" not in st.session_state:
-        # POKAZUJEMY EKRAN LOGOWANIA (Zgłoszony priorytetowo - ma gwarancję wyświetlenia)
+        # POKAZUJEMY EKRAN LOGOWANIA (Brak jakichkolwiek blokad)
         st.title("🌍 Lingilo")
         st.subheader(_("Twój Osobisty Asystent Językowy AI"))
         
@@ -1619,7 +1626,7 @@ def main():
 
         st.markdown("<br>", unsafe_allow_html=True) 
         
-        # PRZYCISK LOGOWANIA (Zawsze stabilny na ekranie, czysty HTML/JS)
+        # PRZYCISK LOGOWANIA (Zawsze stabilny na ekranie, czysty HTML)
         result = oauth2.authorize_button(
             name=_("Zaloguj przez Auth0"),
             icon="https://auth0.com",
@@ -1632,9 +1639,11 @@ def main():
             st.session_state.token = token_data
             st.session_state.logged_out_flag = False
             
-            # Zapis ciasteczka realizujemy przez dedykowanego menedżera tylko po kliknięciu
-            cookie_manager_save = stx.CookieManager(key="lingilo_global_cookie_manager")
             access_tok = token_data.get("access_token") if isinstance(token_data, dict) else token_data
+            
+            # Zapisujemy token do parametrów URL oraz ciasteczek
+            st.query_params["session_token"] = access_tok
+            cookie_manager_save = stx.CookieManager(key="lingilo_global_cookie_manager")
             try:
                 cookie_manager_save.set("auth0_token", access_tok, key="set_cookie_on_login")
                 time.sleep(0.2)
@@ -1645,7 +1654,7 @@ def main():
     else:
         show_main_app = True
 
-    # --- RENDEROWANIE GŁÓWNEJ APLIKACJI (Po poprawnym zalogowaniu) ---
+    # --- RENDEROWANIE GŁÓWNEJ APLIKACJI (Po zalogowaniu) ---
     if show_main_app:
         cookie_manager = stx.CookieManager(key="lingilo_global_cookie_manager")
         
