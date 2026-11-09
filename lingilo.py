@@ -712,21 +712,19 @@ async def app_core(current_user, cookie_manager):
         current_drafts_json = json.dumps(drafts_to_save)
         if current_drafts_json != st.session_state.get('last_saved_drafts'):
             try:
-                # Ponieważ main() stworzył już czystą pętlę dla tego runu,
-                # możemy bezpiecznie pobrać ten event loop i wykonać zapis synchronicznie dla wątku Tornado
+                # Pobieramy aktualną pętlę stworzoną przez main() i wykonujemy zapis
                 try:
                     loop = asyncio.get_running_loop()
                 except RuntimeError:
                     loop = asyncio.get_event_loop()
                 
-                # Uruchamiamy bezpośrednio w pętli bez tworzenia wątków przez threadsafe
+                # Uruchamiamy bezpośrednio w pętli bez zamrażania wątków chmurowych
                 loop.run_until_complete(
                     update_user_preference(current_user, "session_drafts", current_drafts_json)
                 )
                 st.session_state.last_saved_drafts = current_drafts_json
             except Exception:
-                # Jeśli run_until_complete rzuci błąd o działającej pętli (częste w Tornado),
-                # używamy podejścia "odpal i zapomnij" przez create_task, które wpasuje się w pętlę Streamlita
+                # Fallback "odpal i zapomnij" przez create_task, jeśli pętla główna jest w stanie zapisu
                 try:
                     loop.create_task(update_user_preference(current_user, "session_drafts", current_drafts_json))
                 except Exception:
@@ -745,7 +743,6 @@ async def app_core(current_user, cookie_manager):
             del st.session_state.user_info
             
         st.session_state.prefs_loaded = False
-        st.session_state.cookie_loop_count = 99  # Blokada ponownego wczytania przy tym rerun
         st.query_params.clear()
         
         # BLOKADA "ZOMBIE COOKIE"
@@ -1546,22 +1543,118 @@ import requests
 import asyncio
 import time
 
+# Gotowy, społecznościowy wzorzec bezpiecznego pobierania ciasteczek (Boilerplate)
+def get_all_cookies_secure(cookie_manager):
+    # Społeczność Streamlita zaleca małą pętlę i timeout, by dać czas komponentowi JS
+    for _ in range(15):  # maksymalnie 15 prób (około 1.5 - 2 sekund oczekiwania)
+        cookies = cookie_manager.get_all()
+        if cookies is not None:
+            return cookies
+        time.sleep(0.1)  # Czekamy 100ms na asynchroniczną odpowiedź z frontendu
+    return {}  # Zwróć pusty słownik, jeśli po 1.5s nic nie przyszło
+
 # ==========================================
-# FUNKCJA MAIN (BEZPIECZNA DLA CHMURY - BEZ DEADLOCKÓW)
+# OSTATECZNA FUNKCJA MAIN ZE SPINNEREM MASKUJĄCYM
 # ==========================================
 def main():
     st.set_page_config(page_title=_("Lingilo - Twój pomocnik językowy"), layout="wide")
 
-    # Inicjalizacja flag odpornych na pętle
-    if "cookie_loop_count" not in st.session_state:
-        st.session_state.cookie_loop_count = 0
     if "logged_out_flag" not in st.session_state:
         st.session_state.logged_out_flag = False
 
-    cookie_manager = stx.CookieManager(key="lingilo_global_cookie_manager")
-    is_auth0_callback = "code" in st.query_params
+    # Kontrola widoku jądra aplikacji
+    show_main_app = False
 
-    # OBSŁUGA WYLOGOWANIA Z POZIOMU SESJI
+    # Jeśli token jest już w pamięci podręcznej session_state, od razu włączamy aplikację
+    if "token" in st.session_state:
+        show_main_app = True
+        with st.sidebar:
+            cookie_manager = stx.CookieManager(key="lingilo_global_cookie_manager")
+    else:
+        # Tworzymy dynamiczny placeholder na ekran powitalny lub spinner
+        welcome_placeholder = st.empty()
+        
+        # Inicjalizacja komponentu jako element layoutu (Klucz do naprawy F5)
+        cookie_manager = stx.CookieManager(key="lingilo_global_cookie_manager")
+        is_auth0_callback = "code" in st.query_params
+
+        # JAWNE, WYMUSZONE ODZYSKANIE TOKENU Z CIASTECZKA (Zabezpieczenie przed mignięciem tekstu)
+        if not is_auth0_callback and not st.session_state.get("logged_out_flag"):
+            all_cookies = cookie_manager.get_all()
+            
+            if all_cookies is None:
+                # Dopóki darmowa chmura AWS ładuje komponent JS, pokazujemy czysty spinner
+                with welcome_placeholder.container():
+                    st.markdown("<br><br>", unsafe_allow_html=True)
+                    with st.spinner(_("Wczytywanie sesji...")):
+                        time.sleep(0.15)
+                return  # Przerywamy bieżący przebieg i czekamy na powrót ciasteczek z frontendu
+            else:
+                saved_token = all_cookies.get("auth0_token")
+                if saved_token and str(saved_token).strip() != "" and saved_token != "None":
+                    st.session_state.token = {"access_token": saved_token}
+                    st.rerun()
+
+        # Jeśli ciasteczka wróciły i użytkownik NIE jest zalogowany, renderujemy ekran powitalny
+        with welcome_placeholder.container():
+            st.title("🌍 Lingilo")
+            st.subheader(_("Twój Osobisty Asystent Językowy AI"))
+            
+            st.markdown(_("Wznieś naukę języków obcych na wyższy poziom dzięki sztucznej inteligencji. Lingilo łączy nowoczesne modele LLM, algorytmy powtórek i wyszukiwanie semantyczne w jednym miejscu."))
+            
+            col_f1, col_f2 = st.columns(2)
+            with col_f1:
+                st.markdown(
+                    f"* 📚 **{_('Inteligentne Fiszki (SM-2) z AI i bazą Tatoeba')}**\n"
+                    f"* ✍️ **{_('Korekta Tekstów z wyjaśnieniem błędów')}**\n"
+                    f"* 🗣️ **{_('Generowanie Mowy (TTS) i trening wymowy')}**"
+                )
+            with col_f2:
+                st.markdown(
+                    f"* 🌐 **{_('Zaawansowane Tłumaczenia z zachowaniem kontekstu')}**\n"
+                    f"* 🧠 **{_('Baza Notatek z wyszukiwaniem semantycznym')}**\n"
+                    f"* 💬 **{_('Czat z Ekspertem językowym w czasie rzeczywistym')}**"
+                )
+                
+            st.markdown("---")
+            
+            ui_langs_display = [NATIVE_LANGUAGE_NAMES[l] for l in SUPPORTED_LANGUAGES]
+            sel_ui_trans = st.selectbox(
+                _("Język interfejsu aplikacji:"), 
+                ui_langs_display, 
+                index=SUPPORTED_LANGUAGES.index(st.session_state.ui_language),
+                key="login_language_picker"
+            )
+            new_ui_lang = SUPPORTED_LANGUAGES[ui_langs_display.index(sel_ui_trans)]
+            
+            if new_ui_lang != st.session_state.ui_language:
+                st.session_state.ui_language = new_ui_lang
+                st.rerun()
+
+            st.markdown("<br>", unsafe_allow_html=True) 
+            
+            # PRZYCISK LOGOWANIA
+            result = oauth2.authorize_button(
+                name=_("Zaloguj przez Auth0"),
+                icon="https://auth0.com",
+                redirect_uri=REDIRECT_URI,  
+                scope="openid email profile"
+            )
+            
+            if result and "token" in result:
+                token_data = result.get("token")
+                st.session_state.token = token_data
+                st.session_state.logged_out_flag = False
+                
+                access_tok = token_data.get("access_token") if isinstance(token_data, dict) else token_data
+                try:
+                    cookie_manager.set("auth0_token", access_tok, key="set_cookie_on_login")
+                    time.sleep(0.2)
+                except Exception:
+                    pass
+                st.rerun()
+
+    # OBSŁUGA FORCE_LOGOUT
     if st.session_state.get("force_logout"):
         try:
             cookie_manager.set("auth0_token", "", key="del_auth_cookie_force")
@@ -1572,125 +1665,45 @@ def main():
         st.session_state.pop("user_info", None)
         st.session_state.force_logout = False
         st.session_state.logged_out_flag = True
-        st.session_state.cookie_loop_count = 99  
         st.query_params.clear()
         st.rerun()
 
-    # --- ODZYSKIWANIE SESJI (Większy limit prób dla opóźnień w sieci AWS) ---
-    if "token" not in st.session_state and not is_auth0_callback and st.session_state.cookie_loop_count < 5:
-        if not st.session_state.get("logged_out_flag"):
+    # --- RENDEROWANIE GŁÓWNEJ APLIKACJI ---
+    if show_main_app:
+        token_data = st.session_state.token
+        access_token_str = token_data.get("access_token") if isinstance(token_data, dict) else token_data
+
+        if "user_info" not in st.session_state:
             try:
-                time.sleep(0.25) # Stabilizacja komponentu JS na Streamlit Cloud 
-                saved_token = cookie_manager.get(cookie="auth0_token")
-                if saved_token and str(saved_token).strip() != "" and saved_token != "None":
-                    st.session_state.token = {"access_token": saved_token}
-                    st.session_state.cookie_loop_count = 0  
-                    st.rerun()
-            except Exception:
-                pass
-        st.session_state.cookie_loop_count += 1
-        st.rerun()
+                headers = {"Authorization": f"Bearer {access_token_str}"}
+                response = requests.get(f"https://{AUTH0_DOMAIN}/userinfo", headers=headers)
+                response.raise_for_status()
+                st.session_state.user_info = response.json()
+            except Exception as e:
+                st.warning("Sesja Auth0 wygasła lub wystąpił błąd. Trwa wylogowywanie...")
+                try:
+                    cookie_manager.set("auth0_token", "", key="del_expired_session")
+                    time.sleep(0.2)
+                except Exception:
+                    pass
+                
+                st.session_state.pop("token", None)
+                st.session_state.pop("user_info", None)
+                st.session_state.logged_out_flag = True 
+                time.sleep(1.0)
+                st.query_params.clear()
+                st.rerun()
 
-    # --- EKRAN POWITALNY I LOGOWANIE ---
-    if "token" not in st.session_state:
-        st.title("🌍 Lingilo")
-        st.subheader(_("Twój Osobisty Asystent Językowy AI"))
-        
-        st.markdown(_("Wznieś naukę języków obcych na wyższy poziom dzięki sztucznej inteligencji. Lingilo łączy nowoczesne modele LLM, algorytmy powtórek i wyszukiwanie semantyczne w jednym miejscu."))
-        
-        col_f1, col_f2 = st.columns(2)
-        with col_f1:
-            st.markdown(
-                f"* 📚 **{_('Inteligentne Fiszki (SM-2) z AI i bazą Tatoeba')}**\n"
-                f"* ✍️ **{_('Korekta Tekstów z wyjaśnieniem błędów')}**\n"
-                f"* 🗣️ **{_('Generowanie Mowy (TTS) i trening wymowy')}**"
-            )
-        with col_f2:
-            st.markdown(
-                f"* 🌐 **{_('Zaawansowane Tłumaczenia z zachowaniem kontekstu')}**\n"
-                f"* 🧠 **{_('Baza Notatek z wyszukiwaniem semantycznym')}**\n"
-                f"* 💬 **{_('Czat z Ekspertem językowym w czasie rzeczywistym')}**"
-            )
-            
-        st.markdown("---")
-        
-        ui_langs_display = [NATIVE_LANGUAGE_NAMES[l] for l in SUPPORTED_LANGUAGES]
-        sel_ui_trans = st.selectbox(
-            _("Język interfejsu aplikacji:"), 
-            ui_langs_display, 
-            index=SUPPORTED_LANGUAGES.index(st.session_state.ui_language),
-            key="login_language_picker"
-        )
-        new_ui_lang = SUPPORTED_LANGUAGES[ui_langs_display.index(sel_ui_trans)]
-        
-        if new_ui_lang != st.session_state.ui_language:
-            st.session_state.ui_language = new_ui_lang
-            st.rerun()
+        if "user_info" in st.session_state:
+            current_user = st.session_state.user_info.get("sub", "default_user")
+            st.session_state.current_user_id = current_user
 
-        st.markdown("<br>", unsafe_allow_html=True) 
-        
-        # PRZYCISK LOGOWANIA
-        result = oauth2.authorize_button(
-            name=_("Zaloguj przez Auth0"),
-            icon="https://auth0.com",
-            redirect_uri=REDIRECT_URI,  
-            scope="openid email profile"
-        )
-        
-        if result and "token" in result:
-            token_data = result.get("token")
-            st.session_state.token = token_data
-            st.session_state.logged_out_flag = False
-            
-            access_tok = token_data.get("access_token") if isinstance(token_data, dict) else token_data
             try:
-                cookie_manager.set("auth0_token", access_tok, key="set_cookie_on_login")
-                time.sleep(0.2)
-            except Exception:
-                pass
-            st.session_state.cookie_loop_count = 0
-            st.rerun()
-            
-        return
-
-    # --- GŁÓWNA APLIKACJA PO ZALOGOWANIU ---
-    token_data = st.session_state.token
-    access_token_str = token_data.get("access_token") if isinstance(token_data, dict) else token_data
-
-    if "user_info" not in st.session_state:
-        try:
-            headers = {"Authorization": f"Bearer {access_token_str}"}
-            response = requests.get(f"https://{AUTH0_DOMAIN}/userinfo", headers=headers)
-            response.raise_for_status()
-            st.session_state.user_info = response.json()
-        except Exception as e:
-            st.warning("Sesja Auth0 wygasła lub wystąpił błąd. Trwa wylogowywanie...")
-            try:
-                cookie_manager.set("auth0_token", "", key="del_expired_session")
-                time.sleep(0.2)
-            except Exception:
-                pass
-            
-            st.session_state.pop("token", None)
-            st.session_state.pop("user_info", None)
-            st.session_state.logged_out_flag = True 
-            st.session_state.cookie_loop_count = 99
-            time.sleep(1.0)
-            st.rerun()
-
-    if "user_info" in st.session_state:
-        current_user = st.session_state.user_info.get("sub", "default_user")
-        st.session_state.current_user_id = current_user
-
-        # BEZPIECZNE WYWOŁANIE ASYNCHRONICZNEGO AP_CORE
-        # Tworzymy izolowaną pętlę zdarzeń na czas trwania renderowania widoku
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            loop.run_until_complete(app_core(current_user, cookie_manager))
-        finally:
-            loop.close()
-
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(app_core(current_user, cookie_manager))
+            finally:
+                loop.close()
 
 if __name__ == "__main__":
     main()
