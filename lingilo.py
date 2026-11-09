@@ -705,27 +705,32 @@ async def transcribe_audio(audio_bytes):
 # ==========================================
 async def app_core(current_user, cookie_manager):
 
-    # POPRAWIONY CALLBACK: Robi wszystko w jednym, bezpiecznym miejscu
+    # POPRAWIONY CALLBACK: Bezpieczny dla nowej struktury main()
     def process_logout():
-        # 1. Zapisywanie stanu / kopii roboczych do bazy danych przed usunięciem sesji
+        # 1. Zapisywanie stanu / kopii roboczych przed usunięciem sesji
         drafts_to_save = st.session_state.p_state.copy()
         current_drafts_json = json.dumps(drafts_to_save)
         if current_drafts_json != st.session_state.get('last_saved_drafts'):
             try:
-                # Pobieramy aktualną pętlę zdarzeń działającą w chmurze
+                # Ponieważ main() stworzył już czystą pętlę dla tego runu,
+                # możemy bezpiecznie pobrać ten event loop i wykonać zapis synchronicznie dla wątku Tornado
                 try:
-                    current_loop = asyncio.get_running_loop()
+                    loop = asyncio.get_running_loop()
                 except RuntimeError:
-                    current_loop = asyncio.get_event_loop()
+                    loop = asyncio.get_event_loop()
                 
-                # Bezpieczne dla wątków chmurowych (Tornado) wywołanie asynchronicznego zapisu
-                asyncio.run_coroutine_threadsafe(
-                    update_user_preference(current_user, "session_drafts", current_drafts_json), 
-                    current_loop
+                # Uruchamiamy bezpośrednio w pętli bez tworzenia wątków przez threadsafe
+                loop.run_until_complete(
+                    update_user_preference(current_user, "session_drafts", current_drafts_json)
                 )
                 st.session_state.last_saved_drafts = current_drafts_json
             except Exception:
-                pass
+                # Jeśli run_until_complete rzuci błąd o działającej pętli (częste w Tornado),
+                # używamy podejścia "odpal i zapomnij" przez create_task, które wpasuje się w pętlę Streamlita
+                try:
+                    loop.create_task(update_user_preference(current_user, "session_drafts", current_drafts_json))
+                except Exception:
+                    pass
 
         # 2. Czyszczenie ciasteczka w przeglądarce
         try:
@@ -740,7 +745,7 @@ async def app_core(current_user, cookie_manager):
             del st.session_state.user_info
             
         st.session_state.prefs_loaded = False
-        st.session_state.cookie_loop_count = 99  # Blokada ponownego wczytania przy tym rerunt
+        st.session_state.cookie_loop_count = 99  # Blokada ponownego wczytania przy tym rerun
         st.query_params.clear()
         
         # BLOKADA "ZOMBIE COOKIE"
@@ -773,7 +778,7 @@ async def app_core(current_user, cookie_manager):
         # Przycisk odpala cały proces w callbacku, a po kliknięciu robi czysty rerun
         if st.button(_("Wyloguj"), on_click=process_logout):
             st.rerun()
-            
+
         st.header("⚙️ " + _("Ustawienia"))
         
         ui_langs_display = [NATIVE_LANGUAGE_NAMES[l] for l in SUPPORTED_LANGUAGES]
@@ -1542,14 +1547,16 @@ import asyncio
 import time
 
 # ==========================================
-# FUNKCJA MAIN (GWARANCJA WYŚWIETLENIA PRZYCISKU)
+# FUNKCJA MAIN (BEZPIECZNA DLA CHMURY - BEZ DEADLOCKÓW)
 # ==========================================
 def main():
     st.set_page_config(page_title=_("Lingilo - Twój pomocnik językowy"), layout="wide")
 
-    # Inicjalizacja licznika prób dla ciasteczek (odporność na pętle)
+    # Inicjalizacja flag odpornych na pętle
     if "cookie_loop_count" not in st.session_state:
         st.session_state.cookie_loop_count = 0
+    if "logged_out_flag" not in st.session_state:
+        st.session_state.logged_out_flag = False
 
     cookie_manager = stx.CookieManager(key="lingilo_global_cookie_manager")
     is_auth0_callback = "code" in st.query_params
@@ -1558,7 +1565,7 @@ def main():
     if st.session_state.get("force_logout"):
         try:
             cookie_manager.set("auth0_token", "", key="del_auth_cookie_force")
-            time.sleep(0.15)
+            time.sleep(0.2)
         except Exception:
             pass
         st.session_state.pop("token", None)
@@ -1569,11 +1576,11 @@ def main():
         st.query_params.clear()
         st.rerun()
 
-    # --- ODZYSKIWANIE SESJI (Obsługa F5 / Odświeżenia strony) ---
-    if "token" not in st.session_state and not is_auth0_callback and st.session_state.cookie_loop_count < 2:
+    # --- ODZYSKIWANIE SESJI (Większy limit prób dla opóźnień w sieci AWS) ---
+    if "token" not in st.session_state and not is_auth0_callback and st.session_state.cookie_loop_count < 5:
         if not st.session_state.get("logged_out_flag"):
             try:
-                time.sleep(0.2)  
+                time.sleep(0.25) # Stabilizacja komponentu JS na Streamlit Cloud 
                 saved_token = cookie_manager.get(cookie="auth0_token")
                 if saved_token and str(saved_token).strip() != "" and saved_token != "None":
                     st.session_state.token = {"access_token": saved_token}
@@ -1638,7 +1645,7 @@ def main():
             access_tok = token_data.get("access_token") if isinstance(token_data, dict) else token_data
             try:
                 cookie_manager.set("auth0_token", access_tok, key="set_cookie_on_login")
-                time.sleep(0.15)
+                time.sleep(0.2)
             except Exception:
                 pass
             st.session_state.cookie_loop_count = 0
@@ -1660,7 +1667,7 @@ def main():
             st.warning("Sesja Auth0 wygasła lub wystąpił błąd. Trwa wylogowywanie...")
             try:
                 cookie_manager.set("auth0_token", "", key="del_expired_session")
-                time.sleep(0.15)
+                time.sleep(0.2)
             except Exception:
                 pass
             
@@ -1668,29 +1675,21 @@ def main():
             st.session_state.pop("user_info", None)
             st.session_state.logged_out_flag = True 
             st.session_state.cookie_loop_count = 99
-            time.sleep(1.5)
+            time.sleep(1.0)
             st.rerun()
 
     if "user_info" in st.session_state:
         current_user = st.session_state.user_info.get("sub", "default_user")
         st.session_state.current_user_id = current_user
 
-        # BEZPIECZNE URUCHOMIENIE W STREAMLIT COMMUNITY CLOUD
-        # Zamiast loop.run_until_complete tworzymy/pobieramy czystą pętlę i odpalamy ją bezpieczną dla wątków chmurowych metodą
+        # BEZPIECZNE WYWOŁANIE ASYNCHRONICZNEGO AP_CORE
+        # Tworzymy izolowaną pętlę zdarzeń na czas trwania renderowania widoku
         try:
-            try:
-                loop = asyncio.get_running_loop()
-            except RuntimeError:
-                loop = asyncio.get_event_loop()
-            
-            # Bezpieczny start wątkowy dla asynchronicznej funkcji app_core w kontenerze chmurowym
-            future = asyncio.run_coroutine_threadsafe(app_core(current_user, cookie_manager), loop)
-            future.result() # Czekamy na wynik bez blokowania głównego wątku Tornado
-        except RuntimeError:
-            # Rezerwowy fallback, gdyby Streamlit Cloud całkowicie odizolował główną pętlę
-            new_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(new_loop)
-            new_loop.run_until_complete(app_core(current_user, cookie_manager))
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(app_core(current_user, cookie_manager))
+        finally:
+            loop.close()
 
 
 if __name__ == "__main__":
