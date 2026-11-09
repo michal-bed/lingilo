@@ -1556,6 +1556,11 @@ def get_all_cookies_secure(cookie_manager):
 # ==========================================
 # OSTATECZNA FUNKCJA MAIN ZE SPINNEREM MASKUJĄCYM
 # ==========================================
+# ==========================================
+# OSTATECZNA, KOMPLETNA FUNKCJA MAIN (BEZ PUSTEGO ELEMENTU W SIDEBARZE)
+# ==========================================
+# OSTATECZNA FUNKCJA MAIN (BEZ BŁĘDU DUPLICATE KEY)
+# ==========================================
 def main():
     st.set_page_config(page_title=_("Lingilo - Twój pomocnik językowy"), layout="wide")
 
@@ -1568,8 +1573,8 @@ def main():
     # Jeśli token jest już w pamięci podręcznej session_state, od razu włączamy aplikację
     if "token" in st.session_state:
         show_main_app = True
-        with st.sidebar:
-            cookie_manager = stx.CookieManager(key="lingilo_global_cookie_manager")
+        # Inicjalizujemy raz, poza paskiem bocznym (w głównym bloku kodu)
+        cookie_manager = stx.CookieManager(key="lingilo_global_cookie_manager")
     else:
         # Tworzymy dynamiczny placeholder na ekran powitalny lub spinner
         welcome_placeholder = st.empty()
