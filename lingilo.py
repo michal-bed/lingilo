@@ -39,6 +39,7 @@ import instructor
 import uuid
 import base64
 import extra_streamlit_components as stx
+from http.cookies import SimpleCookie
 
 # Wyciszamy wewnętrzne logowanie LiteLLM żeby nie wywalało błędu Task was destroyed
 litellm.success_callback = []
@@ -1554,50 +1555,34 @@ def get_all_cookies_secure(cookie_manager):
     return {}  # Zwróć pusty słownik, jeśli po 1.5s nic nie przyszło
 
 # ==========================================
-# OSTATECZNA, PANCIERNA FUNKCJA MAIN DLA STREAMLIT CLOUD
+# OFICJALNY, WBUDOWANY STANDARD MAIN (ST.CONTEXT)
 # ==========================================
 def main():
     st.set_page_config(page_title=_("Lingilo - Twój pomocnik językowy"), layout="wide")
 
     if "logged_out_flag" not in st.session_state:
         st.session_state.logged_out_flag = False
-        
-    # Licznik prób odczytu ciasteczek (odporność na latencję AWS)
-    if "cookie_attempts" not in st.session_state:
-        st.session_state.cookie_attempts = 0
 
-    # Kontrola widoku jądra aplikacji
-    show_main_app = False
+    is_auth0_callback = "code" in st.query_params
 
-    # Jeśli token jest już w pamięci podręcznej session_state, od razu włączamy aplikację
-    if "token" in st.session_state:
-        show_main_app = True
-        cookie_manager = stx.CookieManager(key="lingilo_global_cookie_manager")
-    else:
-        # Inicjalizacja komponentu bezpośrednio w kodzie głównym (klucz do naprawy F5)
-        cookie_manager = stx.CookieManager(key="lingilo_global_cookie_manager")
-        is_auth0_callback = "code" in st.query_params
-
-        # --- BEZPIECZNE, AUTOMATYCZNE ODZYSKIWANIE SESJI (F5) ---
-        if not is_auth0_callback and not st.session_state.get("logged_out_flag"):
-            all_cookies = cookie_manager.get_all()
-            
-            if all_cookies is None:
-                # Jeśli chmura jeszcze ładuje komponent JS, dajemy jej szansę przez kontrolowany rerun.
-                # Ograniczamy do 6 prób, co zapobiega nieskończonej pętli, ale pozwala odzyskać sesję.
-                if st.session_state.cookie_attempts < 6:
-                    st.session_state.cookie_attempts += 1
-                    time.sleep(0.15)  # Krótkie uśpienie, by dać czas dla skryptu JS
-                    st.rerun()
-            else:
-                # Ciasteczka wróciły pomyślnie z przeglądarki! Zerujemy licznik prób.
-                st.session_state.cookie_attempts = 0
-                saved_token = all_cookies.get("auth0_token")
+    # --- NATYWNE I BŁYSKAWICZNE ODZYSKIWANIE SESJI (Działa lokalnie i w chmurze) ---
+    if "token" not in st.session_state and not is_auth0_callback:
+        if not st.session_state.get("logged_out_flag"):
+            try:
+                # Oficjalne pobranie ciasteczek za pomocą wbudowanego interfejsu Streamlit
+                saved_token = st.context.cookies.get("auth0_token")
+                
                 if saved_token and str(saved_token).strip() != "" and saved_token != "None":
                     st.session_state.token = {"access_token": saved_token}
                     st.rerun()
+            except Exception:
+                pass
 
-        # RENDERUJEMY EKRAN POWITALNY (Na stałe w drzewie kodu - dzięki temu przycisk NIGDY nie zniknie)
+    # --- KONTROLA WIDOKU ---
+    show_main_app = False
+
+    if "token" not in st.session_state:
+        # POKAZUJEMY EKRAN LOGOWANIA (Zgłoszony priorytetowo - ma gwarancję wyświetlenia)
         st.title("🌍 Lingilo")
         st.subheader(_("Twój Osobisty Asystent Językowy AI"))
         
@@ -1634,7 +1619,7 @@ def main():
 
         st.markdown("<br>", unsafe_allow_html=True) 
         
-        # PRZYCISK LOGOWANIA (Zawsze wyrenderowany na stałe w kodzie, brak możliwości zniknięcia)
+        # PRZYCISK LOGOWANIA (Zawsze stabilny na ekranie, czysty HTML/JS)
         result = oauth2.authorize_button(
             name=_("Zaloguj przez Auth0"),
             icon="https://auth0.com",
@@ -1646,40 +1631,45 @@ def main():
             token_data = result.get("token")
             st.session_state.token = token_data
             st.session_state.logged_out_flag = False
-            st.session_state.cookie_attempts = 0
             
+            # Zapis ciasteczka realizujemy przez dedykowanego menedżera tylko po kliknięciu
+            cookie_manager_save = stx.CookieManager(key="lingilo_global_cookie_manager")
             access_tok = token_data.get("access_token") if isinstance(token_data, dict) else token_data
             try:
-                cookie_manager.set("auth0_token", access_tok, key="set_cookie_on_login")
+                cookie_manager_save.set("auth0_token", access_tok, key="set_cookie_on_login")
                 time.sleep(0.2)
             except Exception:
                 pass
             st.rerun()
+            
+    else:
+        show_main_app = True
 
-    # OBSŁUGA FORCE_LOGOUT
-    if st.session_state.get("force_logout"):
-        try:
-            cookie_manager.set("auth0_token", "", key="del_auth_cookie_force")
-            time.sleep(0.2)
-        except Exception:
-            pass
-        st.session_state.pop("token", None)
-        st.session_state.pop("user_info", None)
-        st.session_state.force_logout = False
-        st.session_state.logged_out_flag = True
-        st.session_state.cookie_attempts = 0
-        st.query_params.clear()
-        st.rerun()
-
-    # --- RENDEROWANIE GŁÓWNEJ APLIKACJI ---
+    # --- RENDEROWANIE GŁÓWNEJ APLIKACJI (Po poprawnym zalogowaniu) ---
     if show_main_app:
+        cookie_manager = stx.CookieManager(key="lingilo_global_cookie_manager")
+        
+        # OBSŁUGA FORCE_LOGOUT
+        if st.session_state.get("force_logout"):
+            try:
+                cookie_manager.set("auth0_token", "", key="del_auth_cookie_force")
+                time.sleep(0.2)
+            except Exception:
+                pass
+            st.session_state.pop("token", None)
+            st.session_state.pop("user_info", None)
+            st.session_state.force_logout = False
+            st.session_state.logged_out_flag = True
+            st.query_params.clear()
+            st.rerun()
+
         token_data = st.session_state.token
         access_token_str = token_data.get("access_token") if isinstance(token_data, dict) else token_data
 
         if "user_info" not in st.session_state:
             try:
-                headers = {"Authorization": f"Bearer {access_token_str}"}
-                response = requests.get(f"https://{AUTH0_DOMAIN}/userinfo", headers=headers)
+                headers_auth = {"Authorization": f"Bearer {access_token_str}"}
+                response = requests.get(f"https://{AUTH0_DOMAIN}/userinfo", headers=headers_auth)
                 response.raise_for_status()
                 st.session_state.user_info = response.json()
             except Exception as e:
@@ -1693,7 +1683,6 @@ def main():
                 st.session_state.pop("token", None)
                 st.session_state.pop("user_info", None)
                 st.session_state.logged_out_flag = True 
-                st.session_state.cookie_attempts = 0
                 time.sleep(1.0)
                 st.query_params.clear()
                 st.rerun()
@@ -1708,8 +1697,6 @@ def main():
                 loop.run_until_complete(app_core(current_user, cookie_manager))
             finally:
                 loop.close()
-
-
 
 if __name__ == "__main__":
     main()
