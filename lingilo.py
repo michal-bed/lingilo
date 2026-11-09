@@ -1554,18 +1554,17 @@ def get_all_cookies_secure(cookie_manager):
     return {}  # Zwróć pusty słownik, jeśli po 1.5s nic nie przyszło
 
 # ==========================================
-# OSTATECZNA FUNKCJA MAIN ZE SPINNEREM MASKUJĄCYM
-# ==========================================
-# ==========================================
-# OSTATECZNA, KOMPLETNA FUNKCJA MAIN (BEZ PUSTEGO ELEMENTU W SIDEBARZE)
-# ==========================================
-# OSTATECZNA FUNKCJA MAIN (BEZ BŁĘDU DUPLICATE KEY)
+# KOMPLETNA FUNKCJA MAIN (AUTOMATYCZNE F5 + BRAK ZNIKANIA PRZYCISKU)
 # ==========================================
 def main():
     st.set_page_config(page_title=_("Lingilo - Twój pomocnik językowy"), layout="wide")
 
     if "logged_out_flag" not in st.session_state:
         st.session_state.logged_out_flag = False
+        
+    # Licznik ponownych prób dla bezbłędnego odczytu ciasteczek po F5
+    if "cookie_fetch_attempts" not in st.session_state:
+        st.session_state.cookie_fetch_attempts = 0
 
     # Kontrola widoku jądra aplikacji
     show_main_app = False
@@ -1573,7 +1572,6 @@ def main():
     # Jeśli token jest już w pamięci podręcznej session_state, od razu włączamy aplikację
     if "token" in st.session_state:
         show_main_app = True
-        # Inicjalizujemy raz, poza paskiem bocznym (w głównym bloku kodu)
         cookie_manager = stx.CookieManager(key="lingilo_global_cookie_manager")
     else:
         # Tworzymy dynamiczny placeholder na ekran powitalny lub spinner
@@ -1583,24 +1581,28 @@ def main():
         cookie_manager = stx.CookieManager(key="lingilo_global_cookie_manager")
         is_auth0_callback = "code" in st.query_params
 
-        # JAWNE, WYMUSZONE ODZYSKANIE TOKENU Z CIASTECZKA (Zabezpieczenie przed mignięciem tekstu)
+        # JAWNE, WYMUSZONE ODZYSKANIE TOKENU Z CIASTECZKA (Odporne na F5 w chmurze AWS)
         if not is_auth0_callback and not st.session_state.get("logged_out_flag"):
             all_cookies = cookie_manager.get_all()
             
             if all_cookies is None:
-                # Dopóki darmowa chmura AWS ładuje komponent JS, pokazujemy czysty spinner
-                with welcome_placeholder.container():
-                    st.markdown("<br><br>", unsafe_allow_html=True)
-                    with st.spinner(_("Wczytywanie sesji...")):
-                        time.sleep(0.15)
-                return  # Przerywamy bieżący przebieg i czekamy na powrót ciasteczek z frontendu
+                # Jeśli chmura ładuje komponent JS, dajemy jej szansę przez kontrolowany rerun
+                if st.session_state.cookie_fetch_attempts < 5:
+                    st.session_state.cookie_fetch_attempts += 1
+                    with welcome_placeholder.container():
+                        st.markdown("<br><br>", unsafe_allow_html=True)
+                        with st.spinner(_("Wczytywanie sesji...")):
+                            time.sleep(0.15)
+                    st.rerun()
             else:
+                # Komponent JS zwrócił dane. Zerujemy licznik prób i sprawdzamy token!
+                st.session_state.cookie_fetch_attempts = 0
                 saved_token = all_cookies.get("auth0_token")
                 if saved_token and str(saved_token).strip() != "" and saved_token != "None":
                     st.session_state.token = {"access_token": saved_token}
                     st.rerun()
 
-        # Jeśli ciasteczka wróciły i użytkownik NIE jest zalogowany, renderujemy ekran powitalny
+        # Renderujemy ekran powitalny wewnątrz placeholder'a (zawsze dostępny jako rezerwa)
         with welcome_placeholder.container():
             st.title("🌍 Lingilo")
             st.subheader(_("Twój Osobisty Asystent Językowy AI"))
@@ -1638,7 +1640,7 @@ def main():
 
             st.markdown("<br>", unsafe_allow_html=True) 
             
-            # PRZYCISK LOGOWANIA
+            # PRZYCISK LOGOWANIA (Zawsze stabilny, chroniony przed przerwaniem kodu)
             result = oauth2.authorize_button(
                 name=_("Zaloguj przez Auth0"),
                 icon="https://auth0.com",
@@ -1650,6 +1652,7 @@ def main():
                 token_data = result.get("token")
                 st.session_state.token = token_data
                 st.session_state.logged_out_flag = False
+                st.session_state.cookie_fetch_attempts = 0
                 
                 access_tok = token_data.get("access_token") if isinstance(token_data, dict) else token_data
                 try:
@@ -1670,6 +1673,7 @@ def main():
         st.session_state.pop("user_info", None)
         st.session_state.force_logout = False
         st.session_state.logged_out_flag = True
+        st.session_state.cookie_fetch_attempts = 0
         st.query_params.clear()
         st.rerun()
 
@@ -1695,6 +1699,7 @@ def main():
                 st.session_state.pop("token", None)
                 st.session_state.pop("user_info", None)
                 st.session_state.logged_out_flag = True 
+                st.session_state.cookie_fetch_attempts = 0
                 time.sleep(1.0)
                 st.query_params.clear()
                 st.rerun()
