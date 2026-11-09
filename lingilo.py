@@ -706,22 +706,23 @@ async def transcribe_audio(audio_bytes):
 async def app_core(current_user, cookie_manager):
 
     # CALLBACK: Wywołuje się NATYCHMIAST po kliknięciu Wyloguj, przed ponownym renderowaniem aplikacji
+    # CALLBACK: Wykonuje się DOKŁADNIE w momencie kliknięcia
     def process_logout():
         try:
-            # Próbujemy natychmiastowo wyczyścić ciasteczko w przeglądarce
             cookie_manager.set("auth0_token", "", key="clear_cookie_on_manual_logout")
         except Exception:
             pass
 
-        # Czyścimy dane z sesji Streamlita, żeby zablokować dostęp do aplikacji
-        st.session_state.pop("token", None)
-        st.session_state.pop("user_info", None)
+        if "token" in st.session_state:
+            del st.session_state.token
+        if "user_info" in st.session_state:
+            del st.session_state.user_info
             
         st.session_state.prefs_loaded = False
         st.session_state.cookie_loop_count = 99  
         st.query_params.clear()
         
-        # BLOKADA "ZOMBIE COOKIE" - chroni przed starym ciastkiem, jeśli przeglądarka odświeży je za późno
+        # BLOKADA "ZOMBIE COOKIE"
         st.session_state.logged_out_flag = True
 
     if "db_initialized" not in st.session_state:
@@ -746,15 +747,12 @@ async def app_core(current_user, cookie_manager):
     with st.sidebar:
         st.success("✅ " + _("Zalogowano pomyślnie"))
         
-        # PRZYCISK WYLOGUJ Z CALLBACKIEM
         if st.button(_("Wyloguj"), on_click=process_logout):
-            # Tu robimy tylko bezpieczny zapis draftów asynchronicznie i wymuszamy twardy reset UI
             drafts_to_save = st.session_state.p_state.copy()
             current_drafts_json = json.dumps(drafts_to_save)
             if current_drafts_json != st.session_state.get('last_saved_drafts'):
                 await update_user_preference(current_user, "session_drafts", current_drafts_json)
                 st.session_state.last_saved_drafts = current_drafts_json
-            
             st.rerun()
             
         st.header("⚙️ " + _("Ustawienia"))
@@ -1528,7 +1526,10 @@ import time
 # FUNKCJA MAIN Z TRWAŁĄ BLOKADĄ ZOMBIE COOKIE
 # ==========================================
 # ==========================================
-# FUNKCJA MAIN (Z TWOIM DZIAŁAJĄCYM CZEKANIEM NA CIASTECZKA)
+# FUNKCJA MAIN Z NIEZAWODNĄ PĘTLĄ DLA CLOUD
+# ==========================================
+# ==========================================
+# FUNKCJA MAIN
 # ==========================================
 def main():
     st.set_page_config(page_title=_("Lingilo - Twój pomocnik językowy"), layout="wide")
@@ -1539,12 +1540,11 @@ def main():
     cookie_manager = stx.CookieManager(key="lingilo_global_cookie_manager")
     is_auth0_callback = "code" in st.query_params
 
-    # ODZYSKIWANIE SESJI (Obsługa F5 / Odświeżenia strony)
-    if "token" not in st.session_state and not is_auth0_callback and st.session_state.cookie_loop_count < 2:
-        # Pytamy Python, czy przed chwilą nie wylogowaliśmy się ręcznie
+    # ODZYSKIWANIE SESJI (Dostosowane pod opóźnienia Cloud, maks 4 próby)
+    if "token" not in st.session_state and not is_auth0_callback and st.session_state.cookie_loop_count < 4:
         if not st.session_state.get("logged_out_flag"):
             try:
-                time.sleep(0.2) 
+                time.sleep(0.4) 
                 saved_token = cookie_manager.get(cookie="auth0_token")
                 
                 if saved_token and str(saved_token).strip() != "" and saved_token != "None":
@@ -1557,7 +1557,6 @@ def main():
             st.session_state.cookie_loop_count += 1
             st.rerun()
         else:
-            # Jeśli wylogowaliśmy się ręcznie, ignorujemy sprawdzanie ciastek
             st.session_state.cookie_loop_count = 99
 
     # --- EKRAN POWITALNY I LOGOWANIE ---
@@ -1600,7 +1599,7 @@ def main():
         
         result = oauth2.authorize_button(
             name=_("Zaloguj przez Auth0"),
-            icon="https://auth0.com",
+            icon="https://auth0.com/favicon.ico",
             redirect_uri=REDIRECT_URI,  
             scope="openid email profile"
         )
