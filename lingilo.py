@@ -1554,17 +1554,13 @@ def get_all_cookies_secure(cookie_manager):
     return {}  # Zwróć pusty słownik, jeśli po 1.5s nic nie przyszło
 
 # ==========================================
-# KOMPLETNA FUNKCJA MAIN (AUTOMATYCZNE F5 + BRAK ZNIKANIA PRZYCISKU)
+# W PEŁNI STABILNA FUNKCJA MAIN (PRZYCISK NIGDY NIE ZNIKA)
 # ==========================================
 def main():
     st.set_page_config(page_title=_("Lingilo - Twój pomocnik językowy"), layout="wide")
 
     if "logged_out_flag" not in st.session_state:
         st.session_state.logged_out_flag = False
-        
-    # Licznik ponownych prób dla bezbłędnego odczytu ciasteczek po F5
-    if "cookie_fetch_attempts" not in st.session_state:
-        st.session_state.cookie_fetch_attempts = 0
 
     # Kontrola widoku jądra aplikacji
     show_main_app = False
@@ -1574,93 +1570,76 @@ def main():
         show_main_app = True
         cookie_manager = stx.CookieManager(key="lingilo_global_cookie_manager")
     else:
-        # Tworzymy dynamiczny placeholder na ekran powitalny lub spinner
-        welcome_placeholder = st.empty()
-        
-        # Inicjalizacja komponentu jako element layoutu (Klucz do naprawy F5)
+        # Inicjalizacja komponentu ciasteczek bezpośrednio w kodzie głównym (naprawa F5)
         cookie_manager = stx.CookieManager(key="lingilo_global_cookie_manager")
         is_auth0_callback = "code" in st.query_params
 
-        # JAWNE, WYMUSZONE ODZYSKANIE TOKENU Z CIASTECZKA (Odporne na F5 w chmurze AWS)
+        # ASYNCHRONICZNE ODCZYTYWANIE SESJI (Bez przerywania skryptu i bez wymuszania st.rerun)
         if not is_auth0_callback and not st.session_state.get("logged_out_flag"):
             all_cookies = cookie_manager.get_all()
-            
-            if all_cookies is None:
-                # Jeśli chmura ładuje komponent JS, dajemy jej szansę przez kontrolowany rerun
-                if st.session_state.cookie_fetch_attempts < 5:
-                    st.session_state.cookie_fetch_attempts += 1
-                    with welcome_placeholder.container():
-                        st.markdown("<br><br>", unsafe_allow_html=True)
-                        with st.spinner(_("Wczytywanie sesji...")):
-                            time.sleep(0.15)
-                    st.rerun()
-            else:
-                # Komponent JS zwrócił dane. Zerujemy licznik prób i sprawdzamy token!
-                st.session_state.cookie_fetch_attempts = 0
+            if all_cookies is not None:
                 saved_token = all_cookies.get("auth0_token")
                 if saved_token and str(saved_token).strip() != "" and saved_token != "None":
                     st.session_state.token = {"access_token": saved_token}
                     st.rerun()
 
-        # Renderujemy ekran powitalny wewnątrz placeholder'a (zawsze dostępny jako rezerwa)
-        with welcome_placeholder.container():
-            st.title("🌍 Lingilo")
-            st.subheader(_("Twój Osobisty Asystent Językowy AI"))
-            
-            st.markdown(_("Wznieś naukę języków obcych na wyższy poziom dzięki sztucznej inteligencji. Lingilo łączy nowoczesne modele LLM, algorytmy powtórek i wyszukiwanie semantyczne w jednym miejscu."))
-            
-            col_f1, col_f2 = st.columns(2)
-            with col_f1:
-                st.markdown(
-                    f"* 📚 **{_('Inteligentne Fiszki (SM-2) z AI i bazą Tatoeba')}**\n"
-                    f"* ✍️ **{_('Korekta Tekstów z wyjaśnieniem błędów')}**\n"
-                    f"* 🗣️ **{_('Generowanie Mowy (TTS) i trening wymowy')}**"
-                )
-            with col_f2:
-                st.markdown(
-                    f"* 🌐 **{_('Zaawansowane Tłumaczenia z zachowaniem kontekstu')}**\n"
-                    f"* 🧠 **{_('Baza Notatek z wyszukiwaniem semantycznym')}**\n"
-                    f"* 💬 **{_('Czat z Ekspertem językowym w czasie rzeczywistym')}**"
-                )
-                
-            st.markdown("---")
-            
-            ui_langs_display = [NATIVE_LANGUAGE_NAMES[l] for l in SUPPORTED_LANGUAGES]
-            sel_ui_trans = st.selectbox(
-                _("Język interfejsu aplikacji:"), 
-                ui_langs_display, 
-                index=SUPPORTED_LANGUAGES.index(st.session_state.ui_language),
-                key="login_language_picker"
+        # RENDERUJEMY EKRAN POWITALNY (Zawsze obecny na ekranie, bez placeholderów i ukrywania)
+        st.title("🌍 Lingilo")
+        st.subheader(_("Twój Osobisty Asystent Językowy AI"))
+        
+        st.markdown(_("Wznieś naukę języków obcych na wyższy poziom dzięki sztucznej inteligencji. Lingilo łączy nowoczesne modele LLM, algorytmy powtórek i wyszukiwanie semantyczne w jednym miejscu."))
+        
+        col_f1, col_f2 = st.columns(2)
+        with col_f1:
+            st.markdown(
+                f"* 📚 **{_('Inteligentne Fiszki (SM-2) z AI i bazą Tatoeba')}**\n"
+                f"* ✍️ **{_('Korekta Tekstów z wyjaśnieniem błędów')}**\n"
+                f"* 🗣️ **{_('Generowanie Mowy (TTS) i trening wymowy')}**"
             )
-            new_ui_lang = SUPPORTED_LANGUAGES[ui_langs_display.index(sel_ui_trans)]
+        with col_f2:
+            st.markdown(
+                f"* 🌐 **{_('Zaawansowane Tłumaczenia z zachowaniem kontekstu')}**\n"
+                f"* 🧠 **{_('Baza Notatek z wyszukiwaniem semantycznym')}**\n"
+                f"* 💬 **{_('Czat z Ekspertem językowym w czasie rzeczywistym')}**"
+            )
             
-            if new_ui_lang != st.session_state.ui_language:
-                st.session_state.ui_language = new_ui_lang
-                st.rerun()
+        st.markdown("---")
+        
+        ui_langs_display = [NATIVE_LANGUAGE_NAMES[l] for l in SUPPORTED_LANGUAGES]
+        sel_ui_trans = st.selectbox(
+            _("Język interfejsu aplikacji:"), 
+            ui_langs_display, 
+            index=SUPPORTED_LANGUAGES.index(st.session_state.ui_language),
+            key="login_language_picker"
+        )
+        new_ui_lang = SUPPORTED_LANGUAGES[ui_langs_display.index(sel_ui_trans)]
+        
+        if new_ui_lang != st.session_state.ui_language:
+            st.session_state.ui_language = new_ui_lang
+            st.rerun()
 
-            st.markdown("<br>", unsafe_allow_html=True) 
+        st.markdown("<br>", unsafe_allow_html=True) 
+        
+        # PRZYCISK LOGOWANIA (Zawsze wyrenderowany na stałe w kodzie, brak możliwości zniknięcia)
+        result = oauth2.authorize_button(
+            name=_("Zaloguj przez Auth0"),
+            icon="https://auth0.com",
+            redirect_uri=REDIRECT_URI,  
+            scope="openid email profile"
+        )
+        
+        if result and "token" in result:
+            token_data = result.get("token")
+            st.session_state.token = token_data
+            st.session_state.logged_out_flag = False
             
-            # PRZYCISK LOGOWANIA (Zawsze stabilny, chroniony przed przerwaniem kodu)
-            result = oauth2.authorize_button(
-                name=_("Zaloguj przez Auth0"),
-                icon="https://auth0.com",
-                redirect_uri=REDIRECT_URI,  
-                scope="openid email profile"
-            )
-            
-            if result and "token" in result:
-                token_data = result.get("token")
-                st.session_state.token = token_data
-                st.session_state.logged_out_flag = False
-                st.session_state.cookie_fetch_attempts = 0
-                
-                access_tok = token_data.get("access_token") if isinstance(token_data, dict) else token_data
-                try:
-                    cookie_manager.set("auth0_token", access_tok, key="set_cookie_on_login")
-                    time.sleep(0.2)
-                except Exception:
-                    pass
-                st.rerun()
+            access_tok = token_data.get("access_token") if isinstance(token_data, dict) else token_data
+            try:
+                cookie_manager.set("auth0_token", access_tok, key="set_cookie_on_login")
+                time.sleep(0.2)
+            except Exception:
+                pass
+            st.rerun()
 
     # OBSŁUGA FORCE_LOGOUT
     if st.session_state.get("force_logout"):
@@ -1673,7 +1652,6 @@ def main():
         st.session_state.pop("user_info", None)
         st.session_state.force_logout = False
         st.session_state.logged_out_flag = True
-        st.session_state.cookie_fetch_attempts = 0
         st.query_params.clear()
         st.rerun()
 
@@ -1699,7 +1677,6 @@ def main():
                 st.session_state.pop("token", None)
                 st.session_state.pop("user_info", None)
                 st.session_state.logged_out_flag = True 
-                st.session_state.cookie_fetch_attempts = 0
                 time.sleep(1.0)
                 st.query_params.clear()
                 st.rerun()
