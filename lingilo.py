@@ -882,7 +882,8 @@ async def app_core(current_user, cookie_manager):
                 target_lang = st.session_state.ui_language
                 sys_prompt += f" Answer and output the corrected text and explanations in {target_lang}."
         
-        st.session_state.corrected_text = await monitor_llm(sys_prompt, st.session_state.p_state['corr_text'], TaskType.CORRECTION)
+                st.session_state.corrected_text = await monitor_llm(sys_prompt, st.session_state.p_state['corr_text'], TaskType.CORRECTION)
+                
         if st.session_state.corrected_text:
             st.info(st.session_state.corrected_text)
             st.markdown("---")
