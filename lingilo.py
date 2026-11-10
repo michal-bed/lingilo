@@ -44,6 +44,8 @@ from http.cookies import SimpleCookie
 # Wyciszamy wewnętrzne logowanie LiteLLM żeby nie wywalało błędu Task was destroyed
 litellm.success_callback = []
 litellm.failure_callback = []
+litellm.turn_off_message_logging = True
+
 
 # --- NAPRAWA BŁĘDÓW SSL I ASYNCIO W SYSTEMIE WINDOWS ---
 if sys.platform == 'win32':
@@ -713,29 +715,17 @@ async def app_core(current_user, cookie_manager):
         current_drafts_json = json.dumps(drafts_to_save)
         if current_drafts_json != st.session_state.get('last_saved_drafts'):
             try:
-                # Pobieramy aktualną pętlę stworzoną przez main() i wykonujemy zapis
-                try:
-                    loop = asyncio.get_running_loop()
-                except RuntimeError:
-                    loop = asyncio.get_event_loop()
+                # Pobieramy aktualnie działającą pętlę zdarzeń (uruchomioną przez asyncio.run w main)
+                loop = asyncio.get_running_loop()
                 
-                # Uruchamiamy bezpośrednio w pętli bez zamrażania wątków chmurowych
-                loop.run_until_complete(
+                # POPRAWKA: Bezpieczne dodanie zadania asynchronicznego do działającej pętli
+                # Używamy create_task, ponieważ wątek Streamlita jest zsynchronizowany z tą pętlą.
+                loop.create_task(
                     update_user_preference(current_user, "session_drafts", current_drafts_json)
                 )
                 st.session_state.last_saved_drafts = current_drafts_json
             except Exception:
-                # Fallback "odpal i zapomnij" przez create_task, jeśli pętla główna jest w stanie zapisu
-                try:
-                    loop.create_task(update_user_preference(current_user, "session_drafts", current_drafts_json))
-                except Exception:
-                    pass
-
-        # 2. Czyszczenie ciasteczka w przeglądarce
-        try:
-            cookie_manager.set("auth0_token", "", key="clear_cookie_on_manual_logout")
-        except Exception:
-            pass
+                pass
 
         # 3. Czyszczenie stanu sesji Pythona
         if "token" in st.session_state:
@@ -1558,32 +1548,19 @@ def get_all_cookies_secure(cookie_manager):
 # OSTATECZNA, PANCIERNA FUNKCJA MAIN DLA STREAMLIT CLOUD
 # ==========================================
 def main():
-    st.set_page_config(page_title=_("Lingilo - Twój pomocnik językowy"), layout="wide")
-
-    if "logged_out_flag" not in st.session_state:
-        st.session_state.logged_out_flag = False
-
-    is_auth0_callback = "code" in st.query_params
-
-    # --- NIEBLOKUJĄCE OTRZYMYWANIE SESJI (F5) ---
-    if "token" not in st.session_state and not is_auth0_callback:
-        if not st.session_state.get("logged_out_flag"):
-            try:
-                # 1. Próba A: Odczyt z paska adresu URL (Pewniak na Streamlit Cloud po F5)
-                url_token = st.query_params.get("session_token")
-                if url_token and str(url_token).strip() != "" and url_token != "None":
-                    st.session_state.token = {"access_token": url_token}
-                    st.rerun()
-                
-                # 2. Próba B: Fallback na wbudowane ciasteczka (Dla pierwszego wejścia)
-                saved_token = st.context.cookies.get("auth0_token")
-                if saved_token and str(saved_token).strip() != "" and saved_token != "None":
+    # --- PRÓBA ODZYSKANIA SESJI Z PARAMETRÓW URL LUB CIASTECZEK (F5 Protection) ---
+    if "token" not in st.session_state:
+        try:
+            q_params = st.query_params
+            if "session_token" in q_params:
+                saved_token = q_params["session_token"]
+                if saved_token and saved_token.strip() != "" and saved_token != "None":
                     st.session_state.token = {"access_token": saved_token}
                     # Synchronizujemy pasek adresu, aby zabezpieczyć kolejne F5
                     st.query_params["session_token"] = saved_token
                     st.rerun()
-            except Exception:
-                pass
+        except Exception:
+            pass
 
     # --- KONTROLA WIDOKU (Gwarancja stabilności przycisku) ---
     show_main_app = False
@@ -1599,8 +1576,8 @@ def main():
         with col_f1:
             st.markdown(
                 f"* 📚 **{_('Inteligentne Fiszki (SM-2) z AI i bazą Tatoeba')}**\n"
-                f"* ✍️ **{_('Korekta Tekstów z wyjaśnieniem błędów')}**\n"
-                f"* 🗣️ **{_('Generowanie Mowy (TTS) i trening wymowy')}**"
+                f"* ✍ {_('Korekta Tekstów z wyjaśnieniem błędów')}**\n"
+                f"* 🗣 {_('Generowanie Mowy (TTS) i trening wymowy')}**"
             )
         with col_f2:
             st.markdown(
@@ -1700,12 +1677,13 @@ def main():
             current_user = st.session_state.user_info.get("sub", "default_user")
             st.session_state.current_user_id = current_user
 
+            # --- POPRAWKA: Bezpieczne uruchomienie asynchroniczne pętli dla Streamlit Cloud ---
             try:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(app_core(current_user, cookie_manager))
-            finally:
-                loop.close()
+                asyncio.run(app_core(current_user, cookie_manager))
+            except Exception as e:
+                st.error(f"Krytyczny błąd asynchronicznej pętli zdarzeń: {e}")
+
+
 
 if __name__ == "__main__":
     main()
