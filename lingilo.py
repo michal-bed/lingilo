@@ -875,9 +875,14 @@ async def app_core(current_user, cookie_manager):
         
         if st.button(_("Popraw tekst")) and st.session_state.p_state['corr_text']:
             with st.spinner(_("Analiza błędów...")):
+                # 1. Podstawowe instrukcje (przetłumaczone automatycznie przez _())
                 sys_prompt = _("Popraw błędy. Zwróć poprawiony tekst.") + " " + _("Następnie w punktach wyjaśnij wprowadzone zmiany i krótko uzasadnij, dlaczego nowa wersja jest lepsza.")
-                st.session_state.corrected_text = await monitor_llm(sys_prompt, st.session_state.p_state['corr_text'], TaskType.CORRECTION)
         
+                # 2. Jawne wymuszenie języka wyniku dopasowane do interfejsu
+                target_lang = st.session_state.ui_language
+                sys_prompt += f" Answer and output the corrected text and explanations in {target_lang}."
+        
+        st.session_state.corrected_text = await monitor_llm(sys_prompt, st.session_state.p_state['corr_text'], TaskType.CORRECTION)
         if st.session_state.corrected_text:
             st.info(st.session_state.corrected_text)
             st.markdown("---")
