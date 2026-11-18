@@ -1582,8 +1582,8 @@ def main():
         with col_f1:
             st.markdown(
                 f"* 📚 **{_('Inteligentne Fiszki (SM-2) z AI i bazą Tatoeba')}**\n"
-                f"* ✍ {_('Korekta Tekstów z wyjaśnieniem błędów')}**\n"
-                f"* 🗣 {_('Generowanie Mowy (TTS) i trening wymowy')}**"
+                f"* ✍ **{_('Korekta Tekstów z wyjaśnieniem błędów')}**\n"
+                f"* 🗣 **{_('Generowanie Mowy (TTS) i trening wymowy')}**"
             )
         with col_f2:
             st.markdown(
